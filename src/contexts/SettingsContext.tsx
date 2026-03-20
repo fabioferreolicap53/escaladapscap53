@@ -32,21 +32,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     addItem: addLinha, 
     removeItem: removeLinha,
     isLoading: isLoadingLinhas
-  } = useSettingsDB('linhas_cuidado');
+  } = useSettingsDB('escaladapscap53_linhas_cuidado');
 
   const { 
     items: categorias, 
     addItem: addCategoria, 
     removeItem: removeCategoria,
     isLoading: isLoadingCategorias
-  } = useSettingsDB('categorias');
+  } = useSettingsDB('escaladapscap53_categorias');
 
   const { 
     items: vinculos, 
     addItem: addVinculo, 
     removeItem: removeVinculo,
     isLoading: isLoadingVinculos
-  } = useSettingsDB('vinculos');
+  } = useSettingsDB('escaladapscap53_vinculos');
 
   return (
     <SettingsContext.Provider value={{ 

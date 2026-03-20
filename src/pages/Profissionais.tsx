@@ -313,7 +313,7 @@ export default function Profissionais() {
                   value={novoProfissional.name}
                   onChange={(e) => setNovoProfissional({...novoProfissional, name: e.target.value})}
                   className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
-                  placeholder="Ex: Dr. João Silva"
+                  placeholder="Ex: João Silva"
                 />
               </div>
               

@@ -22,6 +22,10 @@ pb.autoCancellation(true);
  * @returns Nome completo da coleção (ex: 'escaladapscap53_users')
  */
 export const getCollectionName = (collectionName: string): string => {
+  // Se o nome da coleção já começar com o prefixo, não adiciona novamente
+  if (collectionName.startsWith(`${PROJECT_PREFIX}_`)) {
+    return collectionName;
+  }
   return `${PROJECT_PREFIX}_${collectionName}`;
 };
 
