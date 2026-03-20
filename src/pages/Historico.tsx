@@ -118,7 +118,7 @@ export default function Historico() {
                       className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
                     >
                       <option value="">Todas as categorias</option>
-                      {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                      {categorias.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                     </select>
                   </div>
 
@@ -130,7 +130,7 @@ export default function Historico() {
                       className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
                     >
                       <option value="">Todos os vínculos</option>
-                      {vinculos.map(v => <option key={v} value={v}>{v}</option>)}
+                      {vinculos.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
                     </select>
                   </div>
                 </div>

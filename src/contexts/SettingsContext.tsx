@@ -1,65 +1,59 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { useSettingsDB, SettingItem } from '../hooks/useSettingsDB';
 
 interface SettingsContextType {
-  linhasCuidado: string[];
-  addLinha: (linha: string) => void;
-  removeLinha: (linha: string) => void;
-  categorias: string[];
-  addCategoria: (categoria: string) => void;
-  removeCategoria: (categoria: string) => void;
-  vinculos: string[];
-  addVinculo: (vinculo: string) => void;
-  removeVinculo: (vinculo: string) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  
+  linhasCuidado: SettingItem[];
+  addLinha: (name: string) => Promise<any>;
+  removeLinha: (id: string) => Promise<void>;
+  isLoadingLinhas: boolean;
+
+  categorias: SettingItem[];
+  addCategoria: (name: string) => Promise<any>;
+  removeCategoria: (id: string) => Promise<void>;
+  isLoadingCategorias: boolean;
+
+  vinculos: SettingItem[];
+  addVinculo: (name: string) => Promise<any>;
+  removeVinculo: (id: string) => Promise<void>;
+  isLoadingVinculos: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [linhasCuidado, setLinhasCuidado] = useState<string[]>([]);
+  
+  // Conectando com o PocketBase
+  const { 
+    items: linhasCuidado, 
+    addItem: addLinha, 
+    removeItem: removeLinha,
+    isLoading: isLoadingLinhas
+  } = useSettingsDB('linhas_cuidado');
 
-  const [categorias, setCategorias] = useState<string[]>([]);
+  const { 
+    items: categorias, 
+    addItem: addCategoria, 
+    removeItem: removeCategoria,
+    isLoading: isLoadingCategorias
+  } = useSettingsDB('categorias');
 
-  const [vinculos, setVinculos] = useState<string[]>([]);
-
-  const addLinha = (linha: string) => {
-    if (linha && !linhasCuidado.includes(linha)) {
-      setLinhasCuidado([...linhasCuidado, linha]);
-    }
-  };
-
-  const removeLinha = (linha: string) => {
-    setLinhasCuidado(linhasCuidado.filter(l => l !== linha));
-  };
-
-  const addCategoria = (categoria: string) => {
-    if (categoria && !categorias.includes(categoria)) {
-      setCategorias([...categorias, categoria]);
-    }
-  };
-
-  const removeCategoria = (categoria: string) => {
-    setCategorias(categorias.filter(c => c !== categoria));
-  };
-
-  const addVinculo = (vinculo: string) => {
-    if (vinculo && !vinculos.includes(vinculo)) {
-      setVinculos([...vinculos, vinculo]);
-    }
-  };
-
-  const removeVinculo = (vinculo: string) => {
-    setVinculos(vinculos.filter(v => v !== vinculo));
-  };
+  const { 
+    items: vinculos, 
+    addItem: addVinculo, 
+    removeItem: removeVinculo,
+    isLoading: isLoadingVinculos
+  } = useSettingsDB('vinculos');
 
   return (
     <SettingsContext.Provider value={{ 
-      linhasCuidado, addLinha, removeLinha, 
-      categorias, addCategoria, removeCategoria,
-      vinculos, addVinculo, removeVinculo,
-      searchTerm, setSearchTerm
+      searchTerm, setSearchTerm,
+      linhasCuidado, addLinha, removeLinha, isLoadingLinhas,
+      categorias, addCategoria, removeCategoria, isLoadingCategorias,
+      vinculos, addVinculo, removeVinculo, isLoadingVinculos
     }}>
       {children}
     </SettingsContext.Provider>

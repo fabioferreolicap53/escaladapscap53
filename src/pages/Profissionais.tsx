@@ -251,7 +251,7 @@ export default function Profissionais() {
                       className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
                     >
                       <option value="">Todas as categorias</option>
-                      {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                      {categorias.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                     </select>
                   </div>
 
@@ -263,7 +263,7 @@ export default function Profissionais() {
                       className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
                     >
                       <option value="">Todos os vínculos</option>
-                      {vinculos.map(v => <option key={v} value={v}>{v}</option>)}
+                      {vinculos.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export default function Profissionais() {
                   >
                     <option value="">Selecione uma categoria...</option>
                     {categorias.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
                     ))}
                   </select>
                 </div>
@@ -418,7 +418,7 @@ export default function Profissionais() {
                 >
                   <option value="">Selecione...</option>
                   {vinculos.map(v => (
-                    <option key={v} value={v}>{v}</option>
+                    <option key={v.id} value={v.name}>{v.name}</option>
                   ))}
                 </select>
               </div>

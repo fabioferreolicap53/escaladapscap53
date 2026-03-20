@@ -1,40 +1,50 @@
 import { useState } from 'react';
 import { Layout } from '../components/Layout';
-import { Save, Bell, Shield, Palette, Plus, X } from 'lucide-react';
+import { Plus, X, Loader2 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 
 export default function Configuracoes() {
   const { 
-    linhasCuidado, addLinha, removeLinha, 
-    categorias, addCategoria, removeCategoria,
-    vinculos, addVinculo, removeVinculo
+    linhasCuidado, addLinha, removeLinha, isLoadingLinhas,
+    categorias, addCategoria, removeCategoria, isLoadingCategorias,
+    vinculos, addVinculo, removeVinculo, isLoadingVinculos
   } = useSettings();
 
   const [novaLinha, setNovaLinha] = useState('');
   const [novaCategoria, setNovaCategoria] = useState('');
   const [novoVinculo, setNovoVinculo] = useState('');
 
-  const handleAddLinha = (e: React.FormEvent) => {
+  const [isSubmittingLinha, setIsSubmittingLinha] = useState(false);
+  const [isSubmittingCategoria, setIsSubmittingCategoria] = useState(false);
+  const [isSubmittingVinculo, setIsSubmittingVinculo] = useState(false);
+
+  const handleAddLinha = async (e: React.FormEvent) => {
     e.preventDefault();
     if (novaLinha.trim()) {
-      addLinha(novaLinha.trim());
+      setIsSubmittingLinha(true);
+      await addLinha(novaLinha.trim());
       setNovaLinha('');
+      setIsSubmittingLinha(false);
     }
   };
 
-  const handleAddCategoria = (e: React.FormEvent) => {
+  const handleAddCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
     if (novaCategoria.trim()) {
-      addCategoria(novaCategoria.trim());
+      setIsSubmittingCategoria(true);
+      await addCategoria(novaCategoria.trim());
       setNovaCategoria('');
+      setIsSubmittingCategoria(false);
     }
   };
 
-  const handleAddVinculo = (e: React.FormEvent) => {
+  const handleAddVinculo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (novoVinculo.trim()) {
-      addVinculo(novoVinculo.trim());
+      setIsSubmittingVinculo(true);
+      await addVinculo(novoVinculo.trim());
       setNovoVinculo('');
+      setIsSubmittingVinculo(false);
     }
   };
 
@@ -69,27 +79,31 @@ export default function Configuracoes() {
               />
               <button 
                 type="submit"
-                disabled={!novaLinha.trim()}
+                disabled={!novaLinha.trim() || isSubmittingLinha}
                 className="px-4 py-2.5 bg-surface-high text-on-surface text-sm font-bold rounded-lg border border-outline-variant/10 hover:border-primary/30 hover:bg-surface-bright transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed flex items-center gap-2 active:scale-95 shadow-sm"
               >
-                <Plus size={18} className="text-primary" />
+                {isSubmittingLinha ? <Loader2 size={18} className="animate-spin text-primary" /> : <Plus size={18} className="text-primary" />}
                 Adicionar
               </button>
             </form>
 
-            <div className="flex flex-wrap gap-2">
-              {linhasCuidado.map((linha) => (
-                <div key={linha} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high border border-outline-variant/20 rounded-full group hover:border-error/30 transition-colors">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{linha}</span>
-                  <button 
-                    onClick={() => removeLinha(linha)}
-                    className="text-outline hover:text-error transition-colors p-0.5"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {isLoadingLinhas ? (
+              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary/50" /></div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {linhasCuidado.map((linha) => (
+                  <div key={linha.id} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high border border-outline-variant/20 rounded-full group hover:border-error/30 transition-colors">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{linha.name}</span>
+                    <button 
+                      onClick={() => removeLinha(linha.id)}
+                      className="text-outline hover:text-error transition-colors p-0.5"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -111,27 +125,31 @@ export default function Configuracoes() {
               />
               <button 
                 type="submit"
-                disabled={!novaCategoria.trim()}
+                disabled={!novaCategoria.trim() || isSubmittingCategoria}
                 className="px-4 py-2.5 bg-surface-high text-on-surface text-sm font-bold rounded-lg border border-outline-variant/10 hover:border-primary/30 hover:bg-surface-bright transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed flex items-center gap-2 active:scale-95 shadow-sm"
               >
-                <Plus size={18} className="text-primary" />
+                {isSubmittingCategoria ? <Loader2 size={18} className="animate-spin text-primary" /> : <Plus size={18} className="text-primary" />}
                 Adicionar
               </button>
             </form>
 
-            <div className="flex flex-wrap gap-2">
-              {categorias.map((cat) => (
-                <div key={cat} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high border border-outline-variant/20 rounded-full group hover:border-error/30 transition-colors">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{cat}</span>
-                  <button 
-                    onClick={() => removeCategoria(cat)}
-                    className="text-outline hover:text-error transition-colors p-0.5"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {isLoadingCategorias ? (
+              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary/50" /></div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {categorias.map((cat) => (
+                  <div key={cat.id} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high border border-outline-variant/20 rounded-full group hover:border-error/30 transition-colors">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{cat.name}</span>
+                    <button 
+                      onClick={() => removeCategoria(cat.id)}
+                      className="text-outline hover:text-error transition-colors p-0.5"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -153,27 +171,31 @@ export default function Configuracoes() {
               />
               <button 
                 type="submit"
-                disabled={!novoVinculo.trim()}
+                disabled={!novoVinculo.trim() || isSubmittingVinculo}
                 className="px-4 py-2.5 bg-surface-high text-on-surface text-sm font-bold rounded-lg border border-outline-variant/10 hover:border-primary/30 hover:bg-surface-bright transition-all disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed flex items-center gap-2 active:scale-95 shadow-sm"
               >
-                <Plus size={18} className="text-primary" />
+                {isSubmittingVinculo ? <Loader2 size={18} className="animate-spin text-primary" /> : <Plus size={18} className="text-primary" />}
                 Adicionar
               </button>
             </form>
 
-            <div className="flex flex-wrap gap-2">
-              {vinculos.map((v) => (
-                <div key={v} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high border border-outline-variant/20 rounded-full group hover:border-error/30 transition-colors">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{v}</span>
-                  <button 
-                    onClick={() => removeVinculo(v)}
-                    className="text-outline hover:text-error transition-colors p-0.5"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {isLoadingVinculos ? (
+              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-primary/50" /></div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {vinculos.map((v) => (
+                  <div key={v.id} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high border border-outline-variant/20 rounded-full group hover:border-error/30 transition-colors">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">{v.name}</span>
+                    <button 
+                      onClick={() => removeVinculo(v.id)}
+                      className="text-outline hover:text-error transition-colors p-0.5"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
