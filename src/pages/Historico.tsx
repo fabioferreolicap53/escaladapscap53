@@ -9,7 +9,9 @@ import {
   Calendar as CalendarIcon,
   ChevronsDown,
   Plus,
-  X
+  X,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 import { useEscalas } from '../hooks/useEscalas';
@@ -17,13 +19,26 @@ import { useEscalas } from '../hooks/useEscalas';
 export default function Historico() {
   const navigate = useNavigate();
   const { linhasCuidado, categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
-  const { escalas, isLoading } = useEscalas();
+  const { escalas, isLoading, deleteEscala } = useEscalas();
   const [showFilters, setShowFilters] = useState(false);
+  const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
+  const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
   const [filters, setFilters] = useState({
     linha: '',
     categoria: '',
     vinculo: ''
   });
+
+  const handleExcluirEscala = async (id: string) => {
+    if (confirmacaoExclusaoPasso === 0) {
+      setConfirmacaoExclusaoPasso(1);
+      return;
+    }
+
+    await deleteEscala(id);
+    setShowExcluirConfirm(null);
+    setConfirmacaoExclusaoPasso(0);
+  };
 
   const clearFilters = () => {
     setFilters({ linha: '', categoria: '', vinculo: '' });
@@ -164,8 +179,15 @@ export default function Historico() {
             <p className="text-on-surface-variant font-medium">Buscando registros...</p>
           </div>
         ) : filteredLogs.length > 0 ? (
-          filteredLogs.map((log, index) => (
-            <LogEntry key={index} {...log} />
+          filteredLogs.map((log) => (
+            <LogEntry 
+              key={log.id} 
+              {...log} 
+              onDelete={(id: string) => {
+                setShowExcluirConfirm(id);
+                setConfirmacaoExclusaoPasso(0);
+              }}
+            />
           ))
         ) : (
           <div className="flex flex-col items-center justify-center py-20 bg-surface-low rounded-2xl border border-dashed border-outline-variant/20">
@@ -185,11 +207,50 @@ export default function Historico() {
           </div>
         )}
       </div>
+
+      {/* Confirmação de Exclusão de Escala */}
+      {showExcluirConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/90 backdrop-blur-md p-4">
+          <div className="bg-surface rounded-2xl w-full max-w-sm border border-error/20 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center text-error mx-auto mb-6">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-on-surface mb-2">
+                {confirmacaoExclusaoPasso === 0 ? 'Excluir Lançamento?' : 'Confirmar Remoção Permanente?'}
+              </h3>
+              <p className="text-sm text-outline leading-relaxed">
+                {confirmacaoExclusaoPasso === 0 
+                  ? <>Você deseja remover o registro de escala de <strong>{escalas.find(e => e.id === showExcluirConfirm)?.name}</strong>?</>
+                  : <><strong>Atenção:</strong> Esta ação excluirá permanentemente este lançamento do histórico do PocketBase.</>
+                }
+              </p>
+            </div>
+            <div className="flex border-t border-outline-variant/10">
+              <button 
+                onClick={() => {
+                  setShowExcluirConfirm(null);
+                  setConfirmacaoExclusaoPasso(0);
+                }}
+                className="flex-1 px-6 py-4 text-sm font-bold text-outline hover:bg-surface-high transition-colors border-r border-outline-variant/10"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => handleExcluirEscala(showExcluirConfirm)}
+                className={`flex-1 px-6 py-4 text-sm font-bold transition-colors ${confirmacaoExclusaoPasso === 0 ? 'text-error hover:bg-error/5' : 'bg-error text-surface hover:brightness-110'}`}
+              >
+                {confirmacaoExclusaoPasso === 0 ? 'Remover' : 'Confirmar Exclusão'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
 
-function LogEntry({ time, name, id, role, avatar, unit, monthYear, status, statusColor, isOnline, profId, month, vinculo }: any) {
+function LogEntry({ id, time, name, role, avatar, unit, monthYear, status, statusColor, isOnline, profId, month, vinculo, onDelete }: any) {
   const navigate = useNavigate();
 
   const handleViewScale = () => {
@@ -204,11 +265,13 @@ function LogEntry({ time, name, id, role, avatar, unit, monthYear, status, statu
 
   return (
     <div 
-      onClick={handleViewScale}
       className="group relative flex flex-col md:flex-row md:items-center bg-surface-low p-4 sm:p-5 rounded-xl border border-transparent hover:border-primary/20 hover:bg-surface-high transition-all duration-300 cursor-pointer active:scale-[0.995] gap-4 md:gap-0"
     >
       {/* Top Section for Mobile / Left Section for Desktop */}
-      <div className="flex items-center justify-between md:justify-start w-full md:w-auto md:flex-1">
+      <div 
+        onClick={handleViewScale}
+        className="flex items-center justify-between md:justify-start w-full md:w-auto md:flex-1"
+      >
         <div className="flex items-center gap-4">
           {/* Time Section */}
           <div className="w-14 sm:w-16 flex flex-col items-center border-r border-outline-variant/15 pr-4 sm:pr-6 shrink-0">
@@ -229,18 +292,16 @@ function LogEntry({ time, name, id, role, avatar, unit, monthYear, status, statu
             </div>
           </div>
         </div>
-        
-        {/* Mobile Action Icon */}
-        <div className="md:hidden text-outline">
-          <MoreVertical size={20} />
-        </div>
       </div>
       
       {/* Middle/Bottom Section - Details */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-12 w-full md:w-auto md:flex-1 md:justify-end pl-18 sm:pl-20 md:pl-0 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0">
         
         {/* Centered and Highlighted Reference Section - Clean Style */}
-        <div className="flex flex-col items-start sm:items-center justify-center md:px-6 w-full sm:w-auto md:flex-1">
+        <div 
+          onClick={handleViewScale}
+          className="flex flex-col items-start sm:items-center justify-center md:px-6 w-full sm:w-auto md:flex-1"
+        >
           <span className="text-[9px] sm:text-[11px] text-primary/60 font-black uppercase mb-1 sm:mb-2 tracking-[0.2em] sm:tracking-[0.3em] leading-none">Referência Temporal</span>
           <div className="flex items-center gap-2 sm:gap-3 text-primary transition-all duration-500 transform group-hover:scale-[1.02] w-full sm:w-auto justify-center">
             <CalendarIcon size={16} className="opacity-90 sm:w-[18px] sm:h-[18px]" />
@@ -250,7 +311,10 @@ function LogEntry({ time, name, id, role, avatar, unit, monthYear, status, statu
 
         {/* Details and Actions Section */}
         <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto md:flex-1 gap-4">
-          <div className="flex flex-col items-start sm:items-end min-w-[150px] sm:min-w-[200px]">
+          <div 
+            onClick={handleViewScale}
+            className="flex flex-col items-start sm:items-end min-w-[150px] sm:min-w-[200px]"
+          >
             <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider sm:text-right">Categoria / Linha / Vínculo</span>
             <div className="flex flex-col items-start sm:items-end w-full">
               <span className="text-xs sm:text-sm font-bold text-on-surface leading-tight truncate max-w-full sm:max-w-[200px]">{role}</span>
@@ -263,8 +327,20 @@ function LogEntry({ time, name, id, role, avatar, unit, monthYear, status, statu
             </div>
           </div>
 
-          <div className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity p-2 text-outline hover:text-on-surface hover:bg-surface-bright rounded-lg shrink-0">
-            <MoreVertical size={20} />
+          <div className="flex gap-2">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(id);
+              }}
+              className="p-2 text-outline hover:text-error hover:bg-error/10 rounded-lg transition-all"
+              title="Excluir lançamento"
+            >
+              <Trash2 size={18} />
+            </button>
+            <div className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity p-2 text-outline hover:text-on-surface hover:bg-surface-bright rounded-lg shrink-0">
+              <MoreVertical size={20} />
+            </div>
           </div>
         </div>
       </div>

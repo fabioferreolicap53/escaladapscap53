@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, FormEvent, ChangeEvent } from 'react';
 import { Layout } from '../components/Layout';
 import { useSettings } from '../contexts/SettingsContext';
 import { 
@@ -25,6 +25,7 @@ export default function Profissionais() {
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [showFilters, setShowFilters] = useState(false);
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
+  const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     linha: '',
@@ -42,7 +43,7 @@ export default function Profissionais() {
 
   const { profissionais, isLoading, addProfissional, updateProfissional, deleteProfissional } = useProfissionais();
 
-  const handleSalvarProfissional = async (e: React.FormEvent) => {
+  const handleSalvarProfissional = async (e: FormEvent) => {
     e.preventDefault();
     if (!novoProfissional.name || !novoProfissional.role) return;
 
@@ -91,10 +92,18 @@ export default function Profissionais() {
   };
 
   const handleExcluirProfissional = async (id: string) => {
+    // Se ainda não confirmou a primeira vez (passo 0), avança para o passo 1
+    if (confirmacaoExclusaoPasso === 0) {
+      setConfirmacaoExclusaoPasso(1);
+      return;
+    }
+
+    // Se já confirmou a primeira vez (passo 1), realiza a exclusão
     const profExcluido = profissionais.find(p => p.id === id);
     if (profExcluido) {
       await deleteProfissional(id);
       setShowExcluirConfirm(null);
+      setConfirmacaoExclusaoPasso(0); // Reseta o passo
       setShowSuccessAlert(`Profissional ${profExcluido.name} excluído com sucesso!`);
       
       // Esconde o alerta de sucesso após 3 segundos
@@ -104,7 +113,7 @@ export default function Profissionais() {
     }
   };
 
-  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportCSV = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -540,24 +549,31 @@ export default function Profissionais() {
               <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center text-error mx-auto mb-6">
                 <AlertTriangle size={32} />
               </div>
-              <h3 className="text-xl font-bold text-on-surface mb-2">Confirmar Exclusão?</h3>
+              <h3 className="text-xl font-bold text-on-surface mb-2">
+                {confirmacaoExclusaoPasso === 0 ? 'Confirmar Exclusão?' : 'Tem Certeza Absoluta?'}
+              </h3>
               <p className="text-sm text-outline leading-relaxed">
-                Você está prestes a excluir <strong>{profissionais.find(p => p.id === showExcluirConfirm)?.name}</strong>. 
-                Esta ação não poderá ser desfeita.
+                {confirmacaoExclusaoPasso === 0 
+                  ? <>Você está prestes a excluir <strong>{profissionais.find(p => p.id === showExcluirConfirm)?.name}</strong>. Esta ação não poderá ser desfeita.</>
+                  : <><strong>Esta é a segunda e última confirmação.</strong> Os dados serão removidos permanentemente do PocketBase.</>
+                }
               </p>
             </div>
             <div className="flex border-t border-outline-variant/10">
               <button 
-                onClick={() => setShowExcluirConfirm(null)}
+                onClick={() => {
+                  setShowExcluirConfirm(null);
+                  setConfirmacaoExclusaoPasso(0);
+                }}
                 className="flex-1 px-6 py-4 text-sm font-bold text-outline hover:bg-surface-high transition-colors border-r border-outline-variant/10"
               >
                 Cancelar
               </button>
               <button 
                 onClick={() => handleExcluirProfissional(showExcluirConfirm)}
-                className="flex-1 px-6 py-4 text-sm font-bold text-error hover:bg-error/5 transition-colors"
+                className={`flex-1 px-6 py-4 text-sm font-bold transition-colors ${confirmacaoExclusaoPasso === 0 ? 'text-error hover:bg-error/5' : 'bg-error text-surface hover:brightness-110'}`}
               >
-                Sim, Excluir
+                {confirmacaoExclusaoPasso === 0 ? 'Sim, Excluir' : 'Confirmar Exclusão'}
               </button>
             </div>
           </div>
@@ -567,7 +583,7 @@ export default function Profissionais() {
   );
 }
 
-function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, onDelete: () => void }) {
+function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, onDelete: () => void, key?: any }) {
   const { name, id, avatar, dept, role, hours, vinculo } = prof;
   return (
     <tr 

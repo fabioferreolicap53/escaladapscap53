@@ -67,11 +67,25 @@ export function useEscalas() {
     }
   };
 
+  const deleteEscala = async (id: string) => {
+    try {
+      await pb.collection(collectionName).delete(id);
+      mutate(current => {
+        if (!current) return current;
+        return current.filter(e => e.id !== id);
+      }, false);
+    } catch (error) {
+      console.error("Erro ao excluir escala:", error);
+      throw error;
+    }
+  };
+
   return {
     escalas: data || [],
     isLoading,
     isError: error,
     addEscala,
+    deleteEscala,
     mutate
   };
 }

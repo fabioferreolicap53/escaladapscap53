@@ -47,7 +47,6 @@ export function Layout({ children, activePath = '/' }: LayoutProps) {
         <div className="mb-8 px-2 flex justify-between items-center">
           <div>
             <h1 className="text-xl font-bold tracking-tighter text-primary">ESCALA DAPS/CAP5.3</h1>
-            <p className="text-[10px] uppercase tracking-widest text-outline font-semibold">CONTROLE E GESTÃO</p>
           </div>
           <button 
             className="lg:hidden text-outline hover:text-primary transition-colors"
