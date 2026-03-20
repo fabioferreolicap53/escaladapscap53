@@ -18,17 +18,11 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [linhasCuidado, setLinhasCuidado] = useState([
-    "UTI Adulto", "Emergência", "Centro Cirúrgico", "Pediatria", "Clínica Médica", "Ambulatório", "Poliambulatório"
-  ]);
+  const [linhasCuidado, setLinhasCuidado] = useState<string[]>([]);
 
-  const [categorias, setCategorias] = useState([
-    "Médico Intensivista", "Enfermeiro Chefe", "Cirurgião Geral", "Pediatra", "Técnico de Enfermagem", "Médico Clínico"
-  ]);
+  const [categorias, setCategorias] = useState<string[]>([]);
 
-  const [vinculos, setVinculos] = useState([
-    "CLT", "RPA", "PJ", "Estatutário", "Residente"
-  ]);
+  const [vinculos, setVinculos] = useState<string[]>([]);
 
   const addLinha = (linha: string) => {
     if (linha && !linhasCuidado.includes(linha)) {
