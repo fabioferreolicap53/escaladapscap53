@@ -7,7 +7,6 @@ export interface Escala {
   name: string;
   avatar: string;
   role: string;
-  unit: string;
   month: number;
   year: number;
   status: string;
@@ -21,7 +20,7 @@ const fetcher = async () => {
   try {
     const records = await pb.collection(collectionName).getFullList({
       sort: '-created',
-      fields: 'id,profId,name,avatar,role,unit,month,year,status,statusColor,vinculo,time'
+      fields: 'id,profId,name,avatar,role,month,year,status,statusColor,vinculo,time'
     });
     
     return records.map(record => ({
@@ -30,7 +29,6 @@ const fetcher = async () => {
       name: record.name,
       avatar: record.avatar,
       role: record.role,
-      unit: record.unit,
       month: record.month,
       year: record.year,
       status: record.status,

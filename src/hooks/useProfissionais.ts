@@ -5,10 +5,7 @@ export interface Profissional {
   id: string;
   name: string;
   avatar: string;
-  dept: string;
   role: string;
-  status: string;
-  statusColor: string;
   hours: string;
   vinculo: string;
 }
@@ -19,17 +16,14 @@ const fetcher = async () => {
     const records = await pb.collection(collectionName).getFullList({
       sort: '-created',
       // Trazer apenas os campos necessários para economizar memória
-      fields: 'id,name,avatar,dept,role,status,statusColor,hours,vinculo'
+      fields: 'id,name,avatar,role,hours,vinculo'
     });
     
     return records.map(record => ({
       id: record.id,
       name: record.name,
       avatar: record.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(record.name)}&background=random&color=fff`,
-      dept: record.dept,
       role: record.role,
-      status: record.status || 'Ativo',
-      statusColor: record.statusColor || 'primary',
       hours: record.hours,
       vinculo: record.vinculo
     }));

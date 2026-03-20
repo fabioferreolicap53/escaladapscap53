@@ -18,13 +18,12 @@ import { useEscalas } from '../hooks/useEscalas';
 
 export default function Historico() {
   const navigate = useNavigate();
-  const { linhasCuidado, categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
+  const { categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
   const { escalas, isLoading, deleteEscala } = useEscalas();
   const [showFilters, setShowFilters] = useState(false);
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
   const [filters, setFilters] = useState({
-    linha: '',
     categoria: '',
     vinculo: ''
   });
@@ -41,11 +40,11 @@ export default function Historico() {
   };
 
   const clearFilters = () => {
-    setFilters({ linha: '', categoria: '', vinculo: '' });
+    setFilters({ categoria: '', vinculo: '' });
     setSearchTerm('');
   };
 
-  const hasActiveFilters = filters.linha || filters.categoria || filters.vinculo || searchTerm;
+  const hasActiveFilters = filters.categoria || filters.vinculo || searchTerm;
 
   const mesesNomes = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
@@ -60,14 +59,12 @@ export default function Historico() {
       const matchesSearch = 
         log.name.toLowerCase().includes(searchLower) ||
         log.role.toLowerCase().includes(searchLower) ||
-        log.unit.toLowerCase().includes(searchLower) ||
         log.id.toLowerCase().includes(searchLower);
       
       if (!matchesSearch) return false;
     }
 
-    // Filtros de categoria/linha/vínculo
-    if (filters.linha && !log.unit.includes(filters.linha)) return false;
+    // Filtros de categoria/vínculo
     if (filters.categoria && log.role !== filters.categoria) return false;
     if (filters.vinculo && log.vinculo !== filters.vinculo) return false;
     
@@ -113,18 +110,6 @@ export default function Historico() {
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Linha de Cuidado</label>
-                    <select 
-                      value={filters.linha}
-                      onChange={(e) => setFilters({...filters, linha: e.target.value})}
-                      className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
-                    >
-                      <option value="">Todas as linhas</option>
-                      {linhasCuidado.map(l => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                  </div>
-
                   <div>
                     <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Categoria</label>
                     <select 
@@ -250,7 +235,7 @@ export default function Historico() {
   );
 }
 
-function LogEntry({ id, time, name, role, avatar, unit, monthYear, status, statusColor, isOnline, profId, month, vinculo, onDelete }: any) {
+function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor, isOnline, profId, month, vinculo, onDelete }: any) {
   const navigate = useNavigate();
 
   const handleViewScale = () => {
@@ -315,10 +300,9 @@ function LogEntry({ id, time, name, role, avatar, unit, monthYear, status, statu
             onClick={handleViewScale}
             className="flex flex-col items-start sm:items-end min-w-[150px] sm:min-w-[200px]"
           >
-            <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider sm:text-right">Categoria / Linha / Vínculo</span>
+            <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider sm:text-right">Categoria / Vínculo</span>
             <div className="flex flex-col items-start sm:items-end w-full">
               <span className="text-xs sm:text-sm font-bold text-on-surface leading-tight truncate max-w-full sm:max-w-[200px]">{role}</span>
-              <span className="text-[10px] sm:text-[11px] text-primary font-black italic tracking-tight truncate max-w-full sm:max-w-[200px]">{unit}</span>
               {vinculo && (
                 <span className="text-[9px] sm:text-[10px] text-secondary font-black uppercase tracking-widest mt-0.5">
                   {vinculo}

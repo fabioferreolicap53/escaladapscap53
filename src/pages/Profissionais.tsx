@@ -19,23 +19,20 @@ import {
 import { useProfissionais } from '../hooks/useProfissionais';
 
 export default function Profissionais() {
-  const { linhasCuidado, categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
+  const { categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('Todos');
   const [showFilters, setShowFilters] = useState(false);
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    linha: '',
     categoria: '',
     vinculo: ''
   });
   const [editingProfissionalId, setEditingProfissionalId] = useState<string | null>(null);
   const [novoProfissional, setNovoProfissional] = useState({
     name: '',
-    depts: [] as string[],
     role: '',
     hours: '',
     vinculo: ''
@@ -51,7 +48,6 @@ export default function Profissionais() {
       // Lógica de Edição via PocketBase
       await updateProfissional(editingProfissionalId, {
         name: novoProfissional.name,
-        dept: novoProfissional.depts.length > 0 ? novoProfissional.depts.join(', ') : "Clínica Geral",
         role: novoProfissional.role,
         hours: novoProfissional.hours || "40h / Semanal",
         vinculo: novoProfissional.vinculo || "CLT"
@@ -61,10 +57,7 @@ export default function Profissionais() {
       await addProfissional({
         name: novoProfissional.name,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(novoProfissional.name)}&background=random&color=fff`,
-        dept: novoProfissional.depts.length > 0 ? novoProfissional.depts.join(', ') : "Clínica Geral",
         role: novoProfissional.role,
-        status: "Ativo",
-        statusColor: "primary",
         hours: novoProfissional.hours || "40h / Semanal",
         vinculo: novoProfissional.vinculo || "CLT"
       });
@@ -76,14 +69,13 @@ export default function Profissionais() {
   const fecharModal = () => {
     setIsModalOpen(false);
     setEditingProfissionalId(null);
-    setNovoProfissional({ name: '', depts: [], role: '', hours: '', vinculo: '' });
+    setNovoProfissional({ name: '', role: '', hours: '', vinculo: '' });
   };
 
   const handleEditClick = (prof: any) => {
     setEditingProfissionalId(prof.id);
     setNovoProfissional({
       name: prof.name,
-      depts: prof.dept.split(', ').filter((d: string) => d !== ''),
       role: prof.role,
       hours: prof.hours,
       vinculo: prof.vinculo || ''
@@ -129,11 +121,10 @@ export default function Profissionais() {
       
       const idxNome = headers.indexOf('profissional');
       const idxCarga = headers.indexOf('carga horária');
-      const idxLinha = headers.indexOf('linha de cuidado');
       const idxVinculo = headers.indexOf('tipo de vínculo');
 
-      if (idxNome === -1 || idxCarga === -1 || idxLinha === -1) {
-        alert('Cabeçalhos do CSV devem conter: profissional, carga horária, linha de cuidado');
+      if (idxNome === -1 || idxCarga === -1) {
+        alert('Cabeçalhos do CSV devem conter: profissional, carga horária');
         return;
       }
 
@@ -142,10 +133,7 @@ export default function Profissionais() {
         return {
           name: values[idxNome],
           avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(values[idxNome])}&background=random&color=fff`,
-          dept: values[idxLinha],
           role: "Profissional da Saúde", // Padrão caso não venha no CSV
-          status: "Ativo",
-          statusColor: "primary",
           hours: values[idxCarga].includes('h') ? values[idxCarga] : `${values[idxCarga]}h / Semanal`,
           vinculo: idxVinculo !== -1 ? values[idxVinculo] : "CLT"
         };
@@ -163,21 +151,8 @@ export default function Profissionais() {
     reader.readAsText(file);
   };
 
-  const toggleLinhaDeCuidado = (linha: string) => {
-    setNovoProfissional(prev => ({
-      ...prev,
-      depts: prev.depts.includes(linha) 
-        ? prev.depts.filter(l => l !== linha)
-        : [...prev.depts, linha]
-    }));
-  };
-
   const filteredProfissionais = (profissionais || []).filter(prof => {
-    // Filtro de Status (Abas)
-    if (activeFilter !== 'Todos' && prof.status !== activeFilter) return false;
-    
     // Filtros Avançados
-    if (filters.linha && !prof.dept.includes(filters.linha)) return false;
     if (filters.categoria && prof.role !== filters.categoria) return false;
     if (filters.vinculo && prof.vinculo !== filters.vinculo) return false;
 
@@ -190,18 +165,11 @@ export default function Profissionais() {
   });
 
   const clearFilters = () => {
-    setFilters({ linha: '', categoria: '', vinculo: '' });
+    setFilters({ categoria: '', vinculo: '' });
     setSearchTerm('');
   };
 
-  const hasActiveFilters = filters.linha || filters.categoria || filters.vinculo || searchTerm;
-
-  const counts = {
-    Todos: profissionais.length,
-    Ativo: profissionais.filter(p => p.status === 'Ativo').length,
-    'Em Férias': profissionais.filter(p => p.status === 'Em Férias').length,
-    Licença: profissionais.filter(p => p.status === 'Licença').length,
-  };
+  const hasActiveFilters = filters.categoria || filters.vinculo || searchTerm;
 
   return (
     <Layout activePath="/profissionais">
@@ -229,7 +197,7 @@ export default function Profissionais() {
           <button 
             onClick={() => {
               setEditingProfissionalId(null);
-              setNovoProfissional({ name: '', depts: [], role: '', hours: '', vinculo: '' });
+              setNovoProfissional({ name: '', role: '', hours: '', vinculo: '' });
               setIsModalOpen(true);
             }}
             className="px-4 sm:px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-surface text-sm font-bold rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/10 hover:brightness-110 transition-all active:scale-95 w-full sm:w-auto"
@@ -241,24 +209,8 @@ export default function Profissionais() {
       </div>
 
       {/* Dashboard / Filters Section */}
-      <div className="grid grid-cols-12 gap-6 mb-8">
-        <div className="col-span-12 lg:col-span-8 flex flex-wrap gap-2 p-1.5 bg-surface-low rounded-xl border border-outline-variant/10">
-          {['Todos', 'Ativo', 'Em Férias', 'Licença'].map(tab => {
-            const displayTab = tab === 'Ativo' ? 'Ativos' : tab;
-            const count = counts[tab as keyof typeof counts] || 0;
-            return (
-              <button 
-                key={tab}
-                onClick={() => setActiveFilter(tab)}
-                className={`px-4 sm:px-6 py-2 rounded-lg text-xs font-bold transition-all flex-grow sm:flex-grow-0 ${activeFilter === tab ? 'bg-surface text-primary shadow-sm border border-outline-variant/10' : 'text-outline hover:text-on-surface hover:bg-surface-high/50'}`}
-              >
-                {displayTab} ({count})
-              </button>
-            );
-          })}
-        </div>
-        
-        <div className="col-span-12 lg:col-span-4 flex gap-3 relative">
+      <div className="flex justify-end gap-6 mb-8">
+        <div className="w-full md:w-1/3 flex gap-3 relative">
           <div 
             onClick={() => setShowFilters(!showFilters)}
             className={`flex-grow bg-surface-low rounded-xl px-4 py-3 sm:py-0 flex items-center justify-center sm:justify-start gap-3 transition-all cursor-pointer border ${
@@ -291,18 +243,6 @@ export default function Profissionais() {
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Linha de Cuidado</label>
-                    <select 
-                      value={filters.linha}
-                      onChange={(e) => setFilters({...filters, linha: e.target.value})}
-                      className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
-                    >
-                      <option value="">Todas as linhas</option>
-                      {linhasCuidado.map(l => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                  </div>
-
                   <div>
                     <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Categoria</label>
                     <select 
@@ -345,7 +285,6 @@ export default function Profissionais() {
               <tr className="bg-surface/50 border-b border-outline-variant/10">
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Profissional</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Categoria Profissional</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Linha(s) de Cuidado</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Vínculo</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Carga Horária</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-right">Ações</th>
@@ -452,25 +391,6 @@ export default function Profissionais() {
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-3">Linha(s) de Cuidado</label>
-                  <div className="flex flex-wrap gap-2">
-                    {linhasCuidado.map((linha) => (
-                      <button
-                        key={linha}
-                        type="button"
-                        onClick={() => toggleLinhaDeCuidado(linha)}
-                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase transition-all border ${
-                          novoProfissional.depts.includes(linha)
-                            ? 'bg-primary text-surface border-primary shadow-md shadow-primary/20 scale-105'
-                            : 'bg-surface-high text-outline border-outline-variant/30 hover:border-primary/50'
-                        }`}
-                      >
-                        {linha}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -583,8 +503,8 @@ export default function Profissionais() {
   );
 }
 
-function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, onDelete: () => void, key?: any }) {
-  const { name, id, avatar, dept, role, hours, vinculo } = prof;
+function TableRow({ prof, onEdit, onDelete, key }: { prof: any, onEdit: () => void, onDelete: () => void, key?: any }) {
+  const { name, id, avatar, role, hours, vinculo } = prof;
   return (
     <tr 
       onClick={onEdit}
@@ -604,15 +524,6 @@ function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, o
       </td>
       <td className="px-6 py-4">
         <p className="text-sm text-on-surface-variant font-bold">{role}</p>
-      </td>
-      <td className="px-6 py-4">
-        <div className="flex flex-wrap gap-1">
-          {dept.split(', ').map((d: string, i: number) => (
-            <span key={i} className="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-black uppercase tracking-tighter italic whitespace-nowrap border border-primary/5">
-              {d}
-            </span>
-          ))}
-        </div>
       </td>
       <td className="px-6 py-4">
         <span className="px-3 py-1 rounded-full bg-secondary-container/20 text-secondary text-[10px] font-black uppercase tracking-widest border border-secondary/10">

@@ -85,7 +85,6 @@ export default function Lancamento() {
         name: prof.name,
         avatar: prof.avatar || '',
         role: prof.role || '',
-        unit: prof.dept || 'Geral',
         month: mesAtual,
         year: anoAtual,
         status: 'PUBLICADO',
