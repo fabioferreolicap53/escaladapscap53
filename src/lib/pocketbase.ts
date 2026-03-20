@@ -7,7 +7,9 @@ const PB_URL = import.meta.env.VITE_POCKETBASE_URL || 'http://localhost:8090';
 const PROJECT_PREFIX = import.meta.env.VITE_PROJECT_PREFIX || 'escaladapscap53';
 
 // Instância única do cliente do PocketBase
-export const pb = new PocketBase(PB_URL);
+// Ajuste para garantir que a URL termine em /api/ se estiver usando um subdiretório ou proxy
+const normalizedUrl = PB_URL.endsWith('/') ? PB_URL : `${PB_URL}/`;
+export const pb = new PocketBase(normalizedUrl);
 
 // Habilita auto-cancelamento de requisições duplicadas pendentes para economizar recursos e conexões
 pb.autoCancellation(true);
