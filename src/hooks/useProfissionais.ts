@@ -8,6 +8,7 @@ export interface Profissional {
   role: string;
   hours: string;
   vinculo: string;
+  linha_cuidado?: string;
 }
 
 const fetcher = async () => {
@@ -16,7 +17,7 @@ const fetcher = async () => {
     const records = await pb.collection(collectionName).getFullList({
       sort: '-created',
       // Trazer apenas os campos necessários para economizar memória
-      fields: 'id,name,avatar,role,hours,vinculo'
+      fields: 'id,name,avatar,role,hours,vinculo,linha_cuidado'
     });
     
     return records.map(record => ({
@@ -25,7 +26,8 @@ const fetcher = async () => {
       avatar: record.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(record.name)}&background=random&color=fff`,
       role: record.role,
       hours: record.hours,
-      vinculo: record.vinculo
+      vinculo: record.vinculo,
+      linha_cuidado: record.linha_cuidado || ''
     }));
   } catch (error) {
     console.error("Erro ao buscar profissionais no PocketBase:", error);

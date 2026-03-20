@@ -19,7 +19,7 @@ import {
 import { useProfissionais } from '../hooks/useProfissionais';
 
 export default function Profissionais() {
-  const { categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
+  const { categorias, vinculos, linhasCuidado, searchTerm, setSearchTerm } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -35,7 +35,8 @@ export default function Profissionais() {
     name: '',
     role: '',
     hours: '',
-    vinculo: ''
+    vinculo: '',
+    linha_cuidado: ''
   });
 
   const { profissionais, isLoading, addProfissional, updateProfissional, deleteProfissional } = useProfissionais();
@@ -50,7 +51,8 @@ export default function Profissionais() {
         name: novoProfissional.name,
         role: novoProfissional.role,
         hours: novoProfissional.hours || "40h / Semanal",
-        vinculo: novoProfissional.vinculo || "CLT"
+        vinculo: novoProfissional.vinculo || "CLT",
+        linha_cuidado: novoProfissional.linha_cuidado || ""
       });
     } else {
       // Lógica de Criação via PocketBase
@@ -59,7 +61,8 @@ export default function Profissionais() {
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(novoProfissional.name)}&background=random&color=fff`,
         role: novoProfissional.role,
         hours: novoProfissional.hours || "40h / Semanal",
-        vinculo: novoProfissional.vinculo || "CLT"
+        vinculo: novoProfissional.vinculo || "CLT",
+        linha_cuidado: novoProfissional.linha_cuidado || ""
       });
     }
     
@@ -69,7 +72,7 @@ export default function Profissionais() {
   const fecharModal = () => {
     setIsModalOpen(false);
     setEditingProfissionalId(null);
-    setNovoProfissional({ name: '', role: '', hours: '', vinculo: '' });
+    setNovoProfissional({ name: '', role: '', hours: '', vinculo: '', linha_cuidado: '' });
   };
 
   const handleEditClick = (prof: any) => {
@@ -78,7 +81,8 @@ export default function Profissionais() {
       name: prof.name,
       role: prof.role,
       hours: prof.hours,
-      vinculo: prof.vinculo || ''
+      vinculo: prof.vinculo || '',
+      linha_cuidado: prof.linha_cuidado || ''
     });
     setIsModalOpen(true);
   };
@@ -359,6 +363,20 @@ export default function Profissionais() {
                   <option value="">Selecione...</option>
                   {vinculos.map(v => (
                     <option key={v.id} value={v.name}>{v.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Linha de Cuidado</label>
+                <select 
+                  value={novoProfissional.linha_cuidado}
+                  onChange={(e) => setNovoProfissional({...novoProfissional, linha_cuidado: e.target.value})}
+                  className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                >
+                  <option value="">Selecione...</option>
+                  {linhasCuidado.map(l => (
+                    <option key={l.id} value={l.name}>{l.name}</option>
                   ))}
                 </select>
               </div>

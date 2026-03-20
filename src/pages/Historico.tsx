@@ -15,11 +15,13 @@ import {
 } from 'lucide-react';
 
 import { useEscalas } from '../hooks/useEscalas';
+import { useProfissionais } from '../hooks/useProfissionais';
 
 export default function Historico() {
   const navigate = useNavigate();
   const { categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
   const { escalas, isLoading, deleteEscala } = useEscalas();
+  const { profissionais } = useProfissionais();
   const [showFilters, setShowFilters] = useState(false);
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
@@ -48,11 +50,15 @@ export default function Historico() {
 
   const mesesNomes = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
-  const filteredLogs = escalas.map(log => ({
-    ...log,
-    monthYear: `${mesesNomes[log.month] || ''} / ${log.year || new Date().getFullYear()}`,
-    isOnline: true // Apenas para manter o estilo visual
-  })).filter(log => {
+  const filteredLogs = escalas.map(log => {
+    const prof = profissionais.find(p => p.id === log.profId);
+    return {
+      ...log,
+      linha_cuidado: prof?.linha_cuidado || '',
+      monthYear: `${mesesNomes[log.month] || ''} / ${log.year || new Date().getFullYear()}`,
+      isOnline: true // Apenas para manter o estilo visual
+    };
+  }).filter(log => {
     // Filtros de busca (texto)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -235,7 +241,7 @@ export default function Historico() {
   );
 }
 
-function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor, isOnline, profId, month, vinculo, onDelete }: any) {
+function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor, isOnline, profId, month, vinculo, linha_cuidado, shifts, onDelete }: any) {
   const navigate = useNavigate();
 
   const handleViewScale = () => {
@@ -248,7 +254,37 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
     });
   };
 
-  return (
+  // Contagem de turnos
+  let shiftCounts: Record<string, { label: string, count: number, color: string }> = {};
+  try {
+    const parsedShifts = JSON.parse(shifts || '[]');
+    parsedShifts.forEach((shift: any) => {
+      if (shift && typeof shift === 'object' && shift.label) {
+        if (!shiftCounts[shift.label]) {
+          shiftCounts[shift.label] = { label: shift.label, count: 0, color: shift.color };
+        }
+        shiftCounts[shift.label].count++;
+      }
+    });
+  } catch (e) {
+    console.error("Erro ao parsear shifts no LogEntry", e);
+  }
+  const shiftSummary = Object.values(shiftCounts).sort((a, b) => b.count - a.count);
+
+   const getDotColor = (color: string) => {
+     switch(color) {
+       case 'emerald': return 'bg-emerald-400';
+       case 'sky': return 'bg-sky-400';
+       case 'amber': return 'bg-amber-400';
+       case 'rose': return 'bg-rose-500';
+       case 'purple': return 'bg-purple-400';
+       case 'indigo': return 'bg-indigo-400';
+       case 'orange': return 'bg-orange-400';
+       default: return 'bg-slate-400';
+     }
+   };
+
+   return (
     <div 
       className="group relative flex flex-col md:flex-row md:items-center bg-surface-low p-4 sm:p-5 rounded-xl border border-transparent hover:border-primary/20 hover:bg-surface-high transition-all duration-300 cursor-pointer active:scale-[0.995] gap-4 md:gap-0"
     >
@@ -280,12 +316,28 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
       </div>
       
       {/* Middle/Bottom Section - Details */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-12 w-full md:w-auto md:flex-1 md:justify-end pl-18 sm:pl-20 md:pl-0 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-auto md:flex-1 md:justify-end pl-18 sm:pl-20 md:pl-0 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0">
         
+        {/* Resumo de Turnos (Novo) */}
+        {shiftSummary.length > 0 && (
+          <div 
+            onClick={handleViewScale}
+            className="flex flex-wrap gap-2 w-full sm:w-auto md:flex-1 justify-start sm:justify-center"
+          >
+            {shiftSummary.map(summary => (
+              <div key={summary.label} className="flex items-center gap-1.5 bg-surface-high px-2 py-1 rounded-md border border-outline-variant/10" title={`${summary.count} dias de ${summary.label}`}>
+                <span className={`w-2 h-2 rounded-full ${getDotColor(summary.color)}`} />
+                <span className="text-[10px] font-bold text-on-surface">{summary.count}</span>
+                <span className="text-[9px] uppercase tracking-wider text-outline">{summary.label.substring(0, 3)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Centered and Highlighted Reference Section - Clean Style */}
         <div 
           onClick={handleViewScale}
-          className="flex flex-col items-start sm:items-center justify-center md:px-6 w-full sm:w-auto md:flex-1"
+          className="flex flex-col items-start sm:items-center justify-center md:px-4 w-full sm:w-auto"
         >
           <span className="text-[9px] sm:text-[11px] text-primary/60 font-black uppercase mb-1 sm:mb-2 tracking-[0.2em] sm:tracking-[0.3em] leading-none">Referência Temporal</span>
           <div className="flex items-center gap-2 sm:gap-3 text-primary transition-all duration-500 transform group-hover:scale-[1.02] w-full sm:w-auto justify-center">
@@ -300,12 +352,17 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
             onClick={handleViewScale}
             className="flex flex-col items-start sm:items-end min-w-[150px] sm:min-w-[200px]"
           >
-            <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider sm:text-right">Categoria / Vínculo</span>
+            <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider sm:text-right">Categoria / Detalhes</span>
             <div className="flex flex-col items-start sm:items-end w-full">
               <span className="text-xs sm:text-sm font-bold text-on-surface leading-tight truncate max-w-full sm:max-w-[200px]">{role}</span>
               {vinculo && (
                 <span className="text-[9px] sm:text-[10px] text-secondary font-black uppercase tracking-widest mt-0.5">
-                  {vinculo}
+                  Vínculo: {vinculo}
+                </span>
+              )}
+              {linha_cuidado && (
+                <span className="text-[9px] sm:text-[10px] text-primary/80 font-black uppercase tracking-widest mt-0.5">
+                  Linha: {linha_cuidado}
                 </span>
               )}
             </div>
