@@ -105,52 +105,6 @@ export default function Profissionais() {
     }
   };
 
-  const handleImportCSV = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
-
-      const lines = text.split('\n').filter(line => line.trim() !== '');
-      if (lines.length < 2) return;
-
-      const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
-      
-      const idxNome = headers.indexOf('profissional');
-      const idxCarga = headers.indexOf('carga horária');
-      const idxVinculo = headers.indexOf('tipo de vínculo');
-
-      if (idxNome === -1 || idxCarga === -1) {
-        alert('Cabeçalhos do CSV devem conter: profissional, carga horária');
-        return;
-      }
-
-      const novosProfissionais = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim());
-        return {
-          name: values[idxNome],
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(values[idxNome])}&background=random&color=fff`,
-          role: "Profissional da Saúde", // Padrão caso não venha no CSV
-          hours: values[idxCarga].includes('h') ? values[idxCarga] : `${values[idxCarga]}h / Semanal`,
-          vinculo: idxVinculo !== -1 ? values[idxVinculo] : "CLT"
-        };
-      }).filter(p => p.name);
-
-      // Salva no PocketBase
-      novosProfissionais.forEach(async (novo) => {
-        await addProfissional(novo);
-      });
-      
-      setShowSuccessAlert(`${novosProfissionais.length} profissionais importados com sucesso!`);
-      setTimeout(() => setShowSuccessAlert(null), 3000);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsText(file);
-  };
-
   const filteredProfissionais = (profissionais || []).filter(prof => {
     // Filtros Avançados
     if (filters.categoria && prof.role !== filters.categoria) return false;
@@ -180,20 +134,6 @@ export default function Profissionais() {
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface">Profissionais Cadastrados</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            onChange={handleImportCSV}
-            accept=".csv"
-            className="hidden" 
-          />
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="px-4 sm:px-6 py-2.5 bg-surface-low text-on-surface text-sm font-bold rounded-lg flex items-center justify-center gap-2 border border-outline-variant/10 hover:bg-surface-high transition-all active:scale-95 shadow-sm w-full sm:w-auto"
-          >
-            <Upload size={18} />
-            Importar CSV
-          </button>
           <button 
             onClick={() => {
               setEditingProfissionalId(null);
