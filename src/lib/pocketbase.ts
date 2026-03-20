@@ -8,7 +8,7 @@ const PROJECT_PREFIX = import.meta.env.VITE_PROJECT_PREFIX || 'escaladapscap53';
 
 // Instância única do cliente do PocketBase
 // O PocketBase não precisa de barra no final da URL
-export const pb = new PocketBase(PB_URL);
+export const pb = new PocketBase(PB_URL.endsWith('/') ? PB_URL.slice(0, -1) : PB_URL);
 
 // Habilita auto-cancelamento de requisições duplicadas pendentes para economizar recursos e conexões
 pb.autoCancellation(true);
