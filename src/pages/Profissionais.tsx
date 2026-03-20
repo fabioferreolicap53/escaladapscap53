@@ -16,6 +16,8 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+import { useProfissionais } from '../hooks/useProfissionais';
+
 export default function Profissionais() {
   const { linhasCuidado, categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,86 +40,25 @@ export default function Profissionais() {
     vinculo: ''
   });
 
-  const [profissionais, setProfissionais] = useState(() => {
-    const saved = localStorage.getItem('escala_profissionais');
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        name: "Dr. Ricardo Menezes",
-        id: "#4492-B",
-        avatar: "https://ui-avatars.com/api/?name=Ricardo+Menezes&background=0D8ABC&color=fff",
-        dept: "UTI Adulto",
-        role: "Médico Intensivista",
-        status: "Ativo",
-        statusColor: "primary",
-        hours: "40h / Semanal",
-        vinculo: "Estatutário"
-      },
-      {
-        name: "Enf. Cláudia Barros",
-        id: "#8103-C",
-        avatar: "https://ui-avatars.com/api/?name=Claudia+Barros&background=4f46e5&color=fff",
-        dept: "Emergência",
-        role: "Enfermeira Chefe",
-        status: "Em Férias",
-        statusColor: "tertiary",
-        hours: "36h / Semanal",
-        vinculo: "CLT"
-      },
-      {
-        name: "Dr. Sérgio Magalhães",
-        id: "#2290-A",
-        avatar: "https://ui-avatars.com/api/?name=Sergio+Magalhaes&background=7c3aed&color=fff",
-        dept: "Centro Cirúrgico",
-        role: "Cirurgião Geral",
-        status: "Licença",
-        statusColor: "error",
-        hours: "24h / Semanal",
-        vinculo: "RPA"
-      },
-      {
-        name: "Dra. Letícia Costa",
-        id: "#5512-P",
-        avatar: "https://ui-avatars.com/api/?name=Leticia+Costa&background=059669&color=fff",
-        dept: "Pediatria",
-        role: "Pediatra",
-        status: "Ativo",
-        statusColor: "primary",
-        hours: "40h / Semanal",
-        vinculo: "Estatutário"
-      }
-    ];
-  });
+  const { profissionais, isLoading, addProfissional, updateProfissional, deleteProfissional } = useProfissionais();
 
-  // Salva no localStorage sempre que mudar
-  useEffect(() => {
-    localStorage.setItem('escala_profissionais', JSON.stringify(profissionais));
-  }, [profissionais]);
-
-  const handleSalvarProfissional = (e: React.FormEvent) => {
+  const handleSalvarProfissional = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoProfissional.name || !novoProfissional.role) return;
 
     if (editingProfissionalId) {
-      // Lógica de Edição
-      setProfissionais(prev => prev.map(p => {
-        if (p.id === editingProfissionalId) {
-          return {
-            ...p,
-            name: novoProfissional.name,
-            dept: novoProfissional.depts.length > 0 ? novoProfissional.depts.join(', ') : "Clínica Geral",
-            role: novoProfissional.role,
-            hours: novoProfissional.hours || "40h / Semanal",
-            vinculo: novoProfissional.vinculo || "CLT"
-          };
-        }
-        return p;
-      }));
-    } else {
-      // Lógica de Criação
-      const novo = {
+      // Lógica de Edição via PocketBase
+      await updateProfissional(editingProfissionalId, {
         name: novoProfissional.name,
-        id: `#${Math.floor(1000 + Math.random() * 9000)}-N`,
+        dept: novoProfissional.depts.length > 0 ? novoProfissional.depts.join(', ') : "Clínica Geral",
+        role: novoProfissional.role,
+        hours: novoProfissional.hours || "40h / Semanal",
+        vinculo: novoProfissional.vinculo || "CLT"
+      });
+    } else {
+      // Lógica de Criação via PocketBase
+      await addProfissional({
+        name: novoProfissional.name,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(novoProfissional.name)}&background=random&color=fff`,
         dept: novoProfissional.depts.length > 0 ? novoProfissional.depts.join(', ') : "Clínica Geral",
         role: novoProfissional.role,
@@ -125,8 +66,7 @@ export default function Profissionais() {
         statusColor: "primary",
         hours: novoProfissional.hours || "40h / Semanal",
         vinculo: novoProfissional.vinculo || "CLT"
-      };
-      setProfissionais([novo, ...profissionais]);
+      });
     }
     
     fecharModal();
@@ -150,16 +90,18 @@ export default function Profissionais() {
     setIsModalOpen(true);
   };
 
-  const handleExcluirProfissional = (id: string) => {
+  const handleExcluirProfissional = async (id: string) => {
     const profExcluido = profissionais.find(p => p.id === id);
-    setProfissionais(prev => prev.filter(p => p.id !== id));
-    setShowExcluirConfirm(null);
-    setShowSuccessAlert(`Profissional ${profExcluido?.name} excluído com sucesso!`);
-    
-    // Esconde o alerta de sucesso após 3 segundos
-    setTimeout(() => {
-      setShowSuccessAlert(null);
-    }, 3000);
+    if (profExcluido) {
+      await deleteProfissional(id);
+      setShowExcluirConfirm(null);
+      setShowSuccessAlert(`Profissional ${profExcluido.name} excluído com sucesso!`);
+      
+      // Esconde o alerta de sucesso após 3 segundos
+      setTimeout(() => {
+        setShowSuccessAlert(null);
+      }, 3000);
+    }
   };
 
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +132,6 @@ export default function Profissionais() {
         const values = line.split(',').map(v => v.trim());
         return {
           name: values[idxNome],
-          id: `#${Math.floor(1000 + Math.random() * 9000)}-CSV`,
           avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(values[idxNome])}&background=random&color=fff`,
           dept: values[idxLinha],
           role: "Profissional da Saúde", // Padrão caso não venha no CSV
@@ -201,7 +142,13 @@ export default function Profissionais() {
         };
       }).filter(p => p.name);
 
-      setProfissionais(prev => [...novosProfissionais, ...prev]);
+      // Salva no PocketBase
+      novosProfissionais.forEach(async (novo) => {
+        await addProfissional(novo);
+      });
+      
+      setShowSuccessAlert(`${novosProfissionais.length} profissionais importados com sucesso!`);
+      setTimeout(() => setShowSuccessAlert(null), 3000);
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsText(file);
@@ -216,7 +163,7 @@ export default function Profissionais() {
     }));
   };
 
-  const filteredProfissionais = profissionais.filter(prof => {
+  const filteredProfissionais = (profissionais || []).filter(prof => {
     // Filtro de Status (Abas)
     if (activeFilter !== 'Todos' && prof.status !== activeFilter) return false;
     
@@ -396,14 +343,37 @@ export default function Profissionais() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/5">
-              {filteredProfissionais.map((prof, idx) => (
-                <TableRow 
-                  key={prof.id}
-                  prof={prof}
-                  onEdit={() => handleEditClick(prof)}
-                  onDelete={() => setShowExcluirConfirm(prof.id)}
-                />
-              ))}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
+                      <p className="text-on-surface-variant font-medium">Buscando profissionais...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredProfissionais.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-surface-high flex items-center justify-center mb-4">
+                        <AlertTriangle size={24} className="text-outline/40" />
+                      </div>
+                      <p className="text-on-surface-variant font-medium">Nenhum profissional encontrado.</p>
+                      <p className="text-xs text-outline mt-1">Tente ajustar os filtros ou adicione um novo.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredProfissionais.map((prof) => (
+                  <TableRow 
+                    key={prof.id}
+                    prof={prof}
+                    onEdit={() => handleEditClick(prof)}
+                    onDelete={() => setShowExcluirConfirm(prof.id)}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>

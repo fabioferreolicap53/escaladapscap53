@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useProfissionais } from '../hooks/useProfissionais';
+import { useEscalas } from '../hooks/useEscalas';
 import { 
   Download, 
   AlertTriangle,
@@ -16,6 +18,8 @@ export default function Lancamento() {
   const { categorias } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
+  const { profissionais } = useProfissionais();
+  const { addEscala } = useEscalas();
   const [selectedProfessional, setSelectedProfessional] = useState('');
   
   // Controle do mês
@@ -74,8 +78,22 @@ export default function Lancamento() {
     
     setIsSaving(true);
     
-    // Simula uma chamada de API para salvar
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    const prof = profissionais.find(p => p.id === selectedProfessional);
+    if (prof) {
+      await addEscala({
+        profId: prof.id,
+        name: prof.name,
+        avatar: prof.avatar || '',
+        role: prof.role || '',
+        unit: prof.dept || 'Geral',
+        month: mesAtual,
+        year: anoAtual,
+        status: 'PUBLICADO',
+        statusColor: 'bg-primary/10 text-primary border border-primary/20',
+        vinculo: prof.vinculo || '',
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      });
+    }
     
     setIsSaving(false);
     navigate('/escala');
@@ -142,15 +160,7 @@ export default function Lancamento() {
     setIsPainting(false);
   };
   
-  // Mock de profissionais para seleção
-  const PROFISSIONAIS_MOCK = [
-    { id: '1', name: 'Dra. Roberta Silva', role: 'Neurologia', initials: 'DR', vinculo: 'Estatutário' },
-    { id: '2', name: 'Marcos Cavalcanti', role: 'Enfermeiro Chefe', initials: 'MC', vinculo: 'CLT' },
-    { id: '3', name: 'Alice Nogueira', role: 'Anestesiologista', initials: 'AN', vinculo: 'RPA' },
-    { id: '4', name: 'Julio Soares', role: 'Técnico Enfermagem', initials: 'JS', vinculo: 'CLT' },
-  ];
-
-  const currentProfessional = PROFISSIONAIS_MOCK.find(p => p.id === selectedProfessional);
+  const currentProfessional = profissionais.find(p => p.id === selectedProfessional);
 
   // Lógica para estruturar o calendário em semanas
   const firstDayOfMonth = new Date(anoAtual, mesAtual, 1).getDay(); // 0-6
@@ -229,7 +239,7 @@ export default function Lancamento() {
                 className="w-full bg-surface border border-outline-variant/20 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
               >
                 <option value="">Escolha um profissional...</option>
-                {PROFISSIONAIS_MOCK.map(p => (
+                {profissionais.map(p => (
                   <option key={p.id} value={p.id}>{p.name} ({p.role})</option>
                 ))}
               </select>
@@ -244,7 +254,7 @@ export default function Lancamento() {
                 <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
                 
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center font-extrabold text-surface text-2xl shadow-xl shadow-primary/20 ring-4 ring-primary/10">
-                  {currentProfessional.initials}
+                  {currentProfessional.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="relative z-10">
                   <h3 className="text-2xl font-black tracking-tight text-on-surface leading-none mb-1">

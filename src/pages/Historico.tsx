@@ -12,9 +12,12 @@ import {
   X
 } from 'lucide-react';
 
+import { useEscalas } from '../hooks/useEscalas';
+
 export default function Historico() {
   const navigate = useNavigate();
   const { linhasCuidado, categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
+  const { escalas, isLoading } = useEscalas();
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     linha: '',
@@ -29,67 +32,13 @@ export default function Historico() {
 
   const hasActiveFilters = filters.linha || filters.categoria || filters.vinculo || searchTerm;
 
-  const MOCK_LOGS = [
-    {
-      time: "20:45",
-      name: "Dra. Ana Mendes",
-      id: "#8821",
-      profId: "1",
-      role: "Clínica Médica",
-      avatar: "https://ui-avatars.com/api/?name=Ana+Mendes&background=0D8ABC&color=fff",
-      unit: "Pronto Socorro Central",
-      monthYear: "MAIO / 2024",
-      month: 4,
-      status: "PUBLICADO",
-      statusColor: "bg-primary/10 text-primary border border-primary/20",
-      isOnline: true,
-      vinculo: "Estatutário"
-    },
-    {
-      time: "19:12",
-      name: "Dr. Lucas Portela",
-      id: "#4429",
-      profId: "2",
-      role: "Anestesiologia",
-      avatar: "https://ui-avatars.com/api/?name=Lucas+Portela&background=4f46e5&color=fff",
-      unit: "Ala Cirúrgica B",
-      monthYear: "MAIO / 2024",
-      month: 4,
-      status: "EXTRA",
-      statusColor: "bg-error-container text-error",
-      vinculo: "CLT"
-    },
-    {
-      time: "16:30",
-      name: "Dra. Juliana Torres",
-      id: "#9021",
-      profId: "3",
-      role: "Cardiologia",
-      avatar: "https://ui-avatars.com/api/?name=Juliana+Torres&background=7c3aed&color=fff",
-      unit: "UTI Coronariana",
-      monthYear: "ABRIL / 2024",
-      month: 3,
-      status: "RESERVADO",
-      statusColor: "bg-tertiary-container text-tertiary",
-      vinculo: "RPA"
-    },
-    {
-      time: "07:00",
-      name: "Dr. Marcos Lima",
-      id: "#3310",
-      profId: "4",
-      role: "Pediatria",
-      avatar: "https://ui-avatars.com/api/?name=Marcos+Lima&background=059669&color=fff",
-      unit: "Ambulatório Infantil",
-      monthYear: "MAIO / 2024",
-      month: 4,
-      status: "DIURNO",
-      statusColor: "bg-secondary-container text-secondary",
-      vinculo: "Estatutário"
-    }
-  ];
+  const mesesNomes = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
-  const filteredLogs = MOCK_LOGS.filter(log => {
+  const filteredLogs = escalas.map(log => ({
+    ...log,
+    monthYear: `${mesesNomes[log.month] || ''} / ${log.year || new Date().getFullYear()}`,
+    isOnline: true // Apenas para manter o estilo visual
+  })).filter(log => {
     // Filtros de busca (texto)
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -205,11 +154,16 @@ export default function Historico() {
           <h3 className="text-sm font-bold text-outline uppercase tracking-widest">Atividade Recente</h3>
           <div className="h-[1px] grow bg-outline-variant/15"></div>
           <span className="text-[10px] text-outline font-medium uppercase">
-            {filteredLogs.length} {filteredLogs.length === 1 ? 'Registro Encontrado' : 'Registros Encontrados'}
+            {isLoading ? 'Carregando...' : `${filteredLogs.length} ${filteredLogs.length === 1 ? 'Registro Encontrado' : 'Registros Encontrados'}`}
           </span>
         </div>
 
-        {filteredLogs.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-surface-low rounded-2xl border border-dashed border-outline-variant/20">
+            <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
+            <p className="text-on-surface-variant font-medium">Buscando registros...</p>
+          </div>
+        ) : filteredLogs.length > 0 ? (
           filteredLogs.map((log, index) => (
             <LogEntry key={index} {...log} />
           ))
