@@ -67,35 +67,60 @@ export default function Lancamento() {
   // Estado para controle de "Pintura" (Drag to Fill)
   const [isPainting, setIsPainting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Atualiza os dias vazios (finais de semana) ao mudar o mês
   const updateShiftsForMonth = (month: number) => {
     setProfessionalShifts(generateEmptyShifts(month));
+    setSaveError(null);
   };
+
+  const { escalas } = useEscalas();
 
   const handleSave = async () => {
     if (!selectedProfessional) return;
     
+    // Verifica se já existe escala para este profissional neste mês/ano
+    const escalaExistente = escalas.find(e => 
+      e.profId === selectedProfessional && 
+      e.month === mesAtual && 
+      e.year === anoAtual
+    );
+
+    if (escalaExistente) {
+      setSaveError(`Já existe uma escala salva para este profissional no mês de ${meses[mesAtual]}.`);
+      // Esconde o erro após 5 segundos
+      setTimeout(() => setSaveError(null), 5000);
+      return;
+    }
+    
     setIsSaving(true);
+    setSaveError(null);
     
     const prof = profissionais.find(p => p.id === selectedProfessional);
     if (prof) {
-      await addEscala({
-        profId: prof.id,
-        name: prof.name,
-        avatar: prof.avatar || '',
-        role: prof.role || '',
-        month: mesAtual,
-        year: anoAtual,
-        status: 'PUBLICADO',
-        statusColor: 'bg-primary/10 text-primary border border-primary/20',
-        vinculo: prof.vinculo || '',
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-      });
+      try {
+        await addEscala({
+          profId: prof.id,
+          name: prof.name,
+          avatar: prof.avatar || '',
+          role: prof.role || '',
+          month: mesAtual,
+          year: anoAtual,
+          status: 'PUBLICADO',
+          statusColor: 'bg-primary/10 text-primary border border-primary/20',
+          vinculo: prof.vinculo || '',
+          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          shifts: JSON.stringify(professionalShifts) // Salva os turnos pintados como JSON string
+        });
+        navigate('/escala');
+      } catch (error) {
+        console.error("Erro ao salvar escala:", error);
+        setSaveError("Erro ao salvar no banco de dados.");
+      }
     }
     
     setIsSaving(false);
-    navigate('/escala');
   };
 
   // Efeito para carregar dados do histórico (se houver)
@@ -112,6 +137,35 @@ export default function Lancamento() {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  // Efeito para carregar a escala salva do PocketBase quando seleciona um profissional
+  useEffect(() => {
+    if (selectedProfessional) {
+      // Busca se já existe uma escala para este profissional neste mês/ano
+      const escalaExistente = escalas.find(e => 
+        e.profId === selectedProfessional && 
+        e.month === mesAtual && 
+        e.year === anoAtual
+      );
+
+      if (escalaExistente && escalaExistente.shifts) {
+        try {
+          const parsedShifts = JSON.parse(escalaExistente.shifts);
+          // Validação básica para garantir que o array tem o tamanho do mês atual
+          if (Array.isArray(parsedShifts) && parsedShifts.length === new Date(anoAtual, mesAtual + 1, 0).getDate()) {
+            setProfessionalShifts(parsedShifts);
+          } else {
+            setProfessionalShifts(generateEmptyShifts(mesAtual));
+          }
+        } catch (e) {
+          console.error("Erro ao fazer parse dos turnos:", e);
+          setProfessionalShifts(generateEmptyShifts(mesAtual));
+        }
+      } else {
+        setProfessionalShifts(generateEmptyShifts(mesAtual));
+      }
+    }
+  }, [selectedProfessional, mesAtual, anoAtual, escalas]);
 
   const applyShift = (index: number) => {
     if (!activeShiftType || professionalShifts[index] === 'weekend') return;
@@ -192,7 +246,12 @@ export default function Lancamento() {
         <div className="max-w-2xl">
           <h2 className="text-4xl font-extrabold tracking-tighter text-on-surface mb-2">Lançamento de Escala</h2>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full xl:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full xl:w-auto items-center">
+          {saveError && (
+            <span className="text-error text-xs font-bold bg-error/10 px-3 py-1.5 rounded-lg animate-pulse">
+              {saveError}
+            </span>
+          )}
           <button 
             onClick={() => navigate('/escala')}
             className="px-6 py-3.5 bg-surface-low text-on-surface text-sm font-bold rounded-xl flex items-center justify-center gap-2 border border-outline-variant/10 hover:bg-surface-high transition-all active:scale-95 shadow-sm w-full sm:w-auto"
