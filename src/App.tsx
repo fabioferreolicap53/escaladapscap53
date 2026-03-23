@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -11,9 +12,10 @@ import Historico from './pages/Historico';
 import Lancamento from './pages/Lancamento';
 import Configuracoes from './pages/Configuracoes';
 import Login from './pages/Login';
+import Monitoramento from './pages/Monitoramento';
 
 // Componente para proteger rotas
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   
   if (!isAuthenticated) {
@@ -31,7 +33,12 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             
-            <Route path="/" element={<Navigate to="/escala" replace />} />
+            <Route path="/" element={<Navigate to="/monitoramento" replace />} />
+            <Route path="/monitoramento" element={
+              <ProtectedRoute>
+                <Monitoramento />
+              </ProtectedRoute>
+            } />
             <Route path="/profissionais" element={
               <ProtectedRoute>
                 <Profissionais />

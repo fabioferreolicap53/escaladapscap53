@@ -22,6 +22,9 @@ export default function Profissionais() {
   const { categorias, vinculos, linhasCuidado, searchTerm, setSearchTerm } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLinhaDropdownOpen, setIsLinhaDropdownOpen] = useState(false);
+  const [searchLinha, setSearchLinha] = useState('');
+  const linhaDropdownRef = useRef<HTMLDivElement>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
@@ -40,6 +43,16 @@ export default function Profissionais() {
   });
 
   const { profissionais, isLoading, addProfissional, updateProfissional, deleteProfissional } = useProfissionais();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (linhaDropdownRef.current && !linhaDropdownRef.current.contains(event.target as Node)) {
+        setIsLinhaDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSalvarProfissional = async (e: FormEvent) => {
     e.preventDefault();
@@ -69,9 +82,31 @@ export default function Profissionais() {
 
   const fecharModal = () => {
     setIsModalOpen(false);
+    setIsLinhaDropdownOpen(false);
+    setSearchLinha('');
     setEditingProfissionalId(null);
     setNovoProfissional({ name: '', role: '', vinculo: '', linha_cuidado: '' });
   };
+
+  const toggleLinhaCuidado = (linha: string) => {
+    const currentLinhas = novoProfissional.linha_cuidado ? novoProfissional.linha_cuidado.split(', ') : [];
+    let newLinhas;
+    
+    if (currentLinhas.includes(linha)) {
+      newLinhas = currentLinhas.filter(l => l !== linha);
+    } else {
+      newLinhas = [...currentLinhas, linha];
+    }
+    
+    setNovoProfissional({
+      ...novoProfissional,
+      linha_cuidado: newLinhas.join(', ')
+    });
+  };
+
+  const filteredLinhasCuidado = linhasCuidado.filter(l => 
+    l.name.toLowerCase().includes(searchLinha.toLowerCase())
+  );
 
   const handleEditClick = (prof: any) => {
     setEditingProfissionalId(prof.id);
@@ -110,7 +145,10 @@ export default function Profissionais() {
     // Filtros Avançados
     if (filters.categoria && prof.role !== filters.categoria) return false;
     if (filters.vinculo && prof.vinculo !== filters.vinculo) return false;
-    if (filters.linha_cuidado && prof.linha_cuidado !== filters.linha_cuidado) return false;
+    if (filters.linha_cuidado) {
+      const linhasProf = prof.linha_cuidado ? prof.linha_cuidado.split(', ') : [];
+      if (!linhasProf.includes(filters.linha_cuidado)) return false;
+    }
 
     // Busca por Texto
     if (searchTerm && 
@@ -352,16 +390,68 @@ export default function Profissionais() {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Linha de Cuidado</label>
-                <select 
-                  value={novoProfissional.linha_cuidado}
-                  onChange={(e) => setNovoProfissional({...novoProfissional, linha_cuidado: e.target.value})}
-                  className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
-                >
-                  <option value="">Selecione...</option>
-                  {linhasCuidado.map(l => (
-                    <option key={l.id} value={l.name}>{l.name}</option>
-                  ))}
-                </select>
+                <div className="relative" ref={linhaDropdownRef}>
+                  <button 
+                    type="button"
+                    onClick={() => setIsLinhaDropdownOpen(!isLinhaDropdownOpen)}
+                    className={`w-full flex items-center justify-between bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all ${isLinhaDropdownOpen ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                  >
+                    <span className={`truncate ${novoProfissional.linha_cuidado ? 'text-on-surface' : 'text-outline/60'}`}>
+                      {novoProfissional.linha_cuidado 
+                        ? (novoProfissional.linha_cuidado.split(', ').length > 2 
+                            ? `${novoProfissional.linha_cuidado.split(', ').length} selecionadas` 
+                            : novoProfissional.linha_cuidado)
+                        : "Selecione uma ou mais..."}
+                    </span>
+                    <ChevronLeft 
+                      size={16} 
+                      className={`text-outline transition-transform duration-300 ${isLinhaDropdownOpen ? 'rotate-90' : '-rotate-90'}`} 
+                    />
+                  </button>
+
+                  {isLinhaDropdownOpen && (
+                    <div className="absolute bottom-full left-0 w-full mb-2 bg-surface border border-outline-variant/20 rounded-xl shadow-2xl z-[70] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      <div className="p-2 border-b border-outline-variant/10">
+                        <input
+                          type="text"
+                          placeholder="Buscar linha..."
+                          value={searchLinha}
+                          onChange={(e) => setSearchLinha(e.target.value)}
+                          className="w-full bg-surface-low border border-outline-variant/10 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="max-h-[180px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+                        {filteredLinhasCuidado.length > 0 ? (
+                          filteredLinhasCuidado.map(l => {
+                            const isSelected = novoProfissional.linha_cuidado.split(', ').includes(l.name);
+                            return (
+                              <button
+                                key={l.id}
+                                type="button"
+                                onClick={() => toggleLinhaCuidado(l.name)}
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left ${
+                                  isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-surface-high text-on-surface'
+                                }`}
+                              >
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                                  isSelected ? 'bg-primary border-primary' : 'border-outline-variant/30'
+                                }`}>
+                                  {isSelected && <CheckCircle2 size={12} className="text-surface" />}
+                                </div>
+                                <span className={`text-xs font-bold ${isSelected ? 'font-black' : 'font-medium'}`}>{l.name}</span>
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="py-4 text-center">
+                            <p className="text-[10px] text-outline uppercase font-bold">Nenhuma linha encontrada</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="pt-4 flex gap-3 justify-end">

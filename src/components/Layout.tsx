@@ -13,7 +13,8 @@ import {
   X,
   Menu,
   LogOut,
-  UserCircle2
+  UserCircle2,
+  PieChart
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -57,6 +58,7 @@ export function Layout({ children, activePath = '/' }: LayoutProps) {
         </div>
         
         <nav className="flex flex-col gap-2 grow">
+          <NavItem icon={<PieChart size={20} />} label="Monitoramento" active={activePath === '/monitoramento'} path="/monitoramento" onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={<CalendarDays size={20} />} label="Escala" active={activePath === '/escala'} path="/escala" onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={<Users size={20} />} label="Profissionais" active={activePath === '/profissionais'} path="/profissionais" onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={<Settings size={20} />} label="Configurações" active={activePath === '/configuracoes'} path="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} />
