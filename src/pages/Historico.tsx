@@ -376,12 +376,12 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
 
   return (
     <div 
-      className="group relative flex flex-col md:flex-row md:items-center bg-surface-low p-4 sm:p-5 rounded-2xl border border-outline-variant/5 hover:border-primary/30 hover:bg-surface-high transition-all duration-500 cursor-pointer active:scale-[0.995] gap-4 md:gap-8 shadow-sm hover:shadow-md md:justify-between"
+      className="group relative flex flex-col md:flex-row md:items-center bg-surface-low p-4 sm:p-5 rounded-2xl border border-outline-variant/5 hover:border-primary/30 hover:bg-surface-high transition-all duration-500 cursor-pointer active:scale-[0.995] gap-4 md:gap-0 shadow-sm hover:shadow-md"
     >
       {/* 1. Professional Section (Left) */}
       <div 
         onClick={handleViewScale}
-        className="flex items-center justify-between md:justify-start w-full md:w-[25%] lg:w-[20%] shrink-0"
+        className="flex items-center justify-between md:justify-start w-full md:w-[22%] shrink-0"
       >
         <div className="flex items-center gap-4">
           {/* Time Section */}
@@ -393,7 +393,7 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
           {/* Name Section */}
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex flex-col min-w-0">
-              <span className="text-lg sm:text-xl font-extrabold text-on-surface group-hover:text-primary transition-colors truncate">{name}</span>
+              <span className="text-lg sm:text-xl font-extrabold text-on-surface group-hover:text-primary transition-colors truncate uppercase tracking-tight">{name}</span>
             </div>
           </div>
         </div>
@@ -403,59 +403,64 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
       {shiftSummary.length > 0 && (
         <div 
           onClick={handleViewScale}
-          className="flex flex-wrap gap-2 w-full md:w-auto md:flex-1 justify-start md:justify-center border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0"
+          className="flex flex-wrap gap-2 w-full md:w-[23%] justify-start md:justify-center border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 md:px-4"
         >
-          {shiftSummary.map(summary => (
-            <div 
-              key={summary.label} 
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105 ${getBadgeBg(summary.color)}`}
-              title={`${summary.count} dias de ${summary.label}`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${getDotColor(summary.color)}`} />
-              <div className="flex items-baseline gap-1">
-                <span className="text-xs font-black text-on-surface">{summary.count}</span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-outline/80">{summary.label.substring(0, 3)}</span>
+          <div className="flex flex-wrap justify-center gap-2">
+            {shiftSummary.map(summary => (
+              <div 
+                key={summary.label} 
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105 ${getBadgeBg(summary.color)}`}
+                title={`${summary.count} dias de ${summary.label}`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${getDotColor(summary.color)}`} />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xs font-black text-on-surface">{summary.count}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-outline/80">{summary.label.substring(0, 3)}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
       {/* 3. Referência Temporal (Center-Right) */}
       <div 
         onClick={handleViewScale}
-        className="flex flex-col items-start md:items-center justify-center w-full md:w-auto md:px-6 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0"
+        className="flex flex-col items-start md:items-center justify-center w-full md:w-[25%] md:px-6 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0"
       >
-        <span className="text-[9px] sm:text-[11px] text-primary/60 font-black uppercase mb-1 sm:mb-2 tracking-[0.2em] sm:tracking-[0.3em] leading-none">Referência Temporal</span>
-        <div className="flex items-center gap-2 sm:gap-3 text-primary transition-all duration-500 transform group-hover:scale-[1.02] w-full sm:w-auto justify-start md:justify-center">
+        <span className="text-[9px] text-primary/60 font-black uppercase mb-1.5 tracking-[0.25em] leading-none text-center w-full">Referência Temporal</span>
+        <div className="flex items-center gap-2 sm:gap-3 text-primary transition-all duration-500 transform group-hover:scale-[1.02] w-full justify-start md:justify-center">
           <CalendarIcon size={16} className="opacity-90 sm:w-[18px] sm:h-[18px]" />
-          <span className="text-xs sm:text-sm font-extrabold tracking-wider sm:tracking-widest italic uppercase leading-none">{monthYear}</span>
+          <span className="text-xs sm:text-sm font-black tracking-widest italic uppercase leading-none">{monthYear}</span>
         </div>
       </div>
 
-      {/* 4. Details and Actions Section (Right) */}
-      <div className="flex items-center justify-between md:justify-end w-full md:w-[25%] lg:w-[20%] gap-4 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 shrink-0">
+      {/* 4. Details Section (Right) */}
+      <div className="flex items-center justify-between md:justify-center w-full md:w-[22%] border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 shrink-0 md:px-4">
         <div 
           onClick={handleViewScale}
-          className="flex flex-col items-start md:items-end min-w-[150px] md:min-w-0 flex-grow"
+          className="flex flex-col items-start md:items-center w-full"
         >
-          <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider md:text-right">Categoria / Detalhes</span>
-          <div className="flex flex-col items-start md:items-end w-full">
-            <span className="text-xs sm:text-sm font-bold text-on-surface leading-tight truncate max-w-full md:max-w-[180px] mb-0.5">{role}</span>
-            {vinculo && (
-              <span className="text-[9px] sm:text-[10px] text-secondary font-black uppercase tracking-[0.1em] mt-1 leading-none">
-                VÍNCULO: {vinculo}
+          <span className="text-[9px] text-outline font-black uppercase mb-1.5 tracking-[0.2em] w-full text-left md:text-center">Categoria / Detalhes</span>
+          <div className="flex flex-col items-start md:items-center w-full gap-1">
+            <span className="text-[11px] font-black text-on-surface leading-none uppercase tracking-[0.15em] mb-0.5 w-full text-left md:text-center truncate">{role}</span>
+            {linha_cuidado && (
+              <span className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none w-full text-left md:text-center truncate">
+                LINHA: {linha_cuidado}
               </span>
             )}
-            {linha_cuidado && (
-              <span className="text-[9px] sm:text-[10px] text-primary/80 font-black uppercase tracking-[0.1em] mt-1 leading-none">
-                LINHA: {linha_cuidado}
+            {vinculo && (
+              <span className="text-[10px] font-black text-outline uppercase tracking-[0.15em] leading-none w-full text-left md:text-center truncate">
+                VÍNCULO: {vinculo}
               </span>
             )}
           </div>
         </div>
-        
-        <div className="flex gap-1 shrink-0">
+      </div>
+
+      {/* 5. Actions Section (Extreme Right) */}
+      <div className="flex items-center justify-end w-full md:w-[8%] border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 shrink-0">
+        <div className="flex gap-1">
           <button 
             onClick={(e) => {
               e.stopPropagation();

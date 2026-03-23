@@ -13,7 +13,10 @@ import {
   Edit2,
   Trash2,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 
 import { useProfissionais } from '../hooks/useProfissionais';
@@ -29,6 +32,10 @@ export default function Profissionais() {
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({
+    key: 'name',
+    direction: 'asc'
+  });
   const [filters, setFilters] = useState({
     categoria: '',
     vinculo: '',
@@ -141,6 +148,14 @@ export default function Profissionais() {
     }
   };
 
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const filteredProfissionais = (profissionais || []).filter(prof => {
     // Filtros Avançados
     if (filters.categoria && prof.role !== filters.categoria) return false;
@@ -164,6 +179,15 @@ export default function Profissionais() {
   };
 
   const hasActiveFilters = filters.categoria || filters.vinculo || filters.linha_cuidado || searchTerm;
+
+  const sortedProfissionais = [...filteredProfissionais].sort((a, b) => {
+    const aValue = a[sortConfig.key] || '';
+    const bValue = b[sortConfig.key] || '';
+    
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   return (
     <Layout activePath="/profissionais">
@@ -269,10 +293,58 @@ export default function Profissionais() {
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-surface/50 border-b border-outline-variant/10">
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Profissional</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Categoria Profissional</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Vínculo</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Linha de Cuidado</th>
+                <th 
+                  className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline cursor-pointer hover:text-primary transition-colors group"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-2">
+                    Profissional
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      {sortConfig.key === 'name' ? (
+                        sortConfig.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                      ) : <ArrowUpDown size={12} />}
+                    </span>
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline cursor-pointer hover:text-primary transition-colors group"
+                  onClick={() => handleSort('role')}
+                >
+                  <div className="flex items-center gap-2">
+                    Categoria Profissional
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      {sortConfig.key === 'role' ? (
+                        sortConfig.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                      ) : <ArrowUpDown size={12} />}
+                    </span>
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline cursor-pointer hover:text-primary transition-colors group"
+                  onClick={() => handleSort('vinculo')}
+                >
+                  <div className="flex items-center gap-2">
+                    Vínculo
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      {sortConfig.key === 'vinculo' ? (
+                        sortConfig.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                      ) : <ArrowUpDown size={12} />}
+                    </span>
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline cursor-pointer hover:text-primary transition-colors group"
+                  onClick={() => handleSort('linha_cuidado')}
+                >
+                  <div className="flex items-center gap-2">
+                    Linha de Cuidado
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      {sortConfig.key === 'linha_cuidado' ? (
+                        sortConfig.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                      ) : <ArrowUpDown size={12} />}
+                    </span>
+                  </div>
+                </th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-right">Ações</th>
               </tr>
             </thead>
@@ -286,7 +358,7 @@ export default function Profissionais() {
                     </div>
                   </td>
                 </tr>
-              ) : filteredProfissionais.length === 0 ? (
+              ) : sortedProfissionais.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-20 text-center">
                     <div className="flex flex-col items-center justify-center">
@@ -299,7 +371,7 @@ export default function Profissionais() {
                   </td>
                 </tr>
               ) : (
-                filteredProfissionais.map((prof) => (
+                sortedProfissionais.map((prof) => (
                   <TableRow 
                     key={prof.id}
                     prof={prof}
