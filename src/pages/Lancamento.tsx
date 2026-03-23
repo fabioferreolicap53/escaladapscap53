@@ -52,6 +52,7 @@ export default function Lancamento() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
+  const [returnUrl, setReturnUrl] = useState<string>('/escala');
   
   // Controle do mês
   const meses = [
@@ -59,21 +60,29 @@ export default function Lancamento() {
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
   const [mesAtual, setMesAtual] = useState(new Date().getMonth());
-  const anoAtual = new Date().getFullYear();
+  const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
 
   const prevMonth = () => {
     setMesAtual(prev => {
-      const newMonth = prev === 0 ? 11 : prev - 1;
-      updateShiftsForMonth(newMonth);
-      return newMonth;
+      if (prev === 0) {
+        setAnoAtual(a => a - 1);
+        updateShiftsForMonth(11, anoAtual - 1);
+        return 11;
+      }
+      updateShiftsForMonth(prev - 1, anoAtual);
+      return prev - 1;
     });
   };
   
   const nextMonth = () => {
     setMesAtual(prev => {
-      const newMonth = prev === 11 ? 0 : prev + 1;
-      updateShiftsForMonth(newMonth);
-      return newMonth;
+      if (prev === 11) {
+        setAnoAtual(a => a + 1);
+        updateShiftsForMonth(0, anoAtual + 1);
+        return 0;
+      }
+      updateShiftsForMonth(prev + 1, anoAtual);
+      return prev + 1;
     });
   };
   
@@ -81,10 +90,10 @@ export default function Lancamento() {
   const [activeShiftType, setActiveShiftType] = useState<{label: string, color: string, type: string} | null>(null);
 
   // Função auxiliar para gerar dias vazios baseados no mês
-  const generateEmptyShifts = (month: number) => {
-    const daysInMonth = new Date(anoAtual, month + 1, 0).getDate();
+  const generateEmptyShifts = (month: number, year: number) => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     return Array(daysInMonth).fill(null).map((_, i) => {
-      const date = new Date(anoAtual, month, i + 1);
+      const date = new Date(year, month, i + 1);
       const day = date.getDay();
       // Apenas domingos permanecem bloqueados como 'weekend'
       // Sábados agora são tratáveis como dias comuns (null)
@@ -93,7 +102,7 @@ export default function Lancamento() {
   };
 
   // Estado da escala do profissional atual
-  const [professionalShifts, setProfessionalShifts] = useState<(any | null)[]>(generateEmptyShifts(new Date().getMonth()));
+  const [professionalShifts, setProfessionalShifts] = useState<(any | null)[]>(generateEmptyShifts(new Date().getMonth(), new Date().getFullYear()));
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -111,8 +120,8 @@ export default function Lancamento() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Atualiza os dias vazios (finais de semana) ao mudar o mês
-  const updateShiftsForMonth = (month: number) => {
-    setProfessionalShifts(generateEmptyShifts(month));
+  const updateShiftsForMonth = (month: number, year: number) => {
+    setProfessionalShifts(generateEmptyShifts(month, year));
     setSaveError(null);
   };
 
@@ -168,7 +177,7 @@ export default function Lancamento() {
         // Aguarda um pouco para mostrar o alerta e depois redireciona
         setTimeout(() => {
           setShowSuccessAlert(null);
-          navigate('/escala');
+          navigate(returnUrl);
         }, 1500);
       } catch (error) {
         console.error("Erro ao salvar escala:", error);
@@ -182,19 +191,26 @@ export default function Lancamento() {
   // Efeito para carregar dados do histórico (se houver)
   useEffect(() => {
     if (location.state && location.state.autoSelect) {
-      const { profId, month } = location.state;
+      const { profId, month, year, returnUrl: passedReturnUrl } = location.state;
       if (profId) setSelectedProfessional(profId);
+      
       if (month !== undefined) {
         setMesAtual(month);
-        updateShiftsForMonth(month);
+      }
+      if (year !== undefined) {
+        setAnoAtual(year);
       }
       
-      // Limpa o estado para não re-selecionar ao recarregar
+      if (passedReturnUrl) {
+        setReturnUrl(passedReturnUrl);
+      }
+      
+      // Limpa o estado no history do browser para não re-selecionar ao dar reload
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
 
-  // Efeito para carregar a escala salva do PocketBase quando seleciona um profissional
+  // Efeito para carregar a escala salva do PocketBase quando seleciona um profissional ou muda o mês/ano
   useEffect(() => {
     if (selectedProfessional) {
       // Busca se já existe uma escala para este profissional neste mês/ano
@@ -211,15 +227,18 @@ export default function Lancamento() {
           if (Array.isArray(parsedShifts) && parsedShifts.length === new Date(anoAtual, mesAtual + 1, 0).getDate()) {
             setProfessionalShifts(parsedShifts);
           } else {
-            setProfessionalShifts(generateEmptyShifts(mesAtual));
+            setProfessionalShifts(generateEmptyShifts(mesAtual, anoAtual));
           }
         } catch (e) {
           console.error("Erro ao fazer parse dos turnos:", e);
-          setProfessionalShifts(generateEmptyShifts(mesAtual));
+          setProfessionalShifts(generateEmptyShifts(mesAtual, anoAtual));
         }
       } else {
-        setProfessionalShifts(generateEmptyShifts(mesAtual));
+        setProfessionalShifts(generateEmptyShifts(mesAtual, anoAtual));
       }
+    } else {
+      // Se não tem profissional, garante que o grid está no mês certo e vazio
+      setProfessionalShifts(generateEmptyShifts(mesAtual, anoAtual));
     }
   }, [selectedProfessional, mesAtual, anoAtual, escalas]);
 
@@ -323,7 +342,7 @@ export default function Lancamento() {
             </span>
           )}
           <button 
-            onClick={() => navigate('/escala')}
+            onClick={() => navigate(returnUrl)}
             className="px-6 py-3.5 bg-surface-low text-on-surface text-sm font-bold rounded-xl flex items-center justify-center gap-2 border border-outline-variant/10 hover:bg-surface-high transition-all active:scale-95 shadow-sm w-full sm:w-auto"
           >
             <XCircle size={18} />

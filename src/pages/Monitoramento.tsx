@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useEscalas } from '../hooks/useEscalas';
 import { useProfissionais } from '../hooks/useProfissionais';
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 
 export default function Monitoramento() {
+  const navigate = useNavigate();
   const { escalas, isLoading: loadingEscalas } = useEscalas();
   const { profissionais, isLoading: loadingProfissionais } = useProfissionais();
   const { searchTerm, setSearchTerm } = useSettings();
@@ -75,8 +77,37 @@ export default function Monitoramento() {
 
   const isLoading = loadingEscalas || loadingProfissionais;
 
+  const handleRowClick = (prof: any) => {
+    if (prof.status === 'realizado') {
+      const escala = escalas.find(
+        e => e.profId === prof.id && e.month === selectedMonth && e.year === selectedYear
+      );
+      if (escala) {
+        navigate('/lancamento', { 
+          state: { 
+            editEscala: escala, 
+            autoSelect: true, 
+            profId: prof.id, 
+            month: selectedMonth, 
+            year: selectedYear,
+            returnUrl: '/monitoramento'
+          } 
+        });
+      }
+    }
+  };
+
   return (
     <Layout activePath="/monitoramento">
+      <style>{`
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(0.95); }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+      `}</style>
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 md:gap-8 mb-8">
         <div className="space-y-1">
@@ -207,20 +238,28 @@ export default function Monitoramento() {
                 </tr>
               ) : (
                 dadosMonitoramento.map((prof) => (
-                  <tr key={prof.id} className="hover:bg-surface-high transition-colors">
+                  <tr 
+                    key={prof.id} 
+                    onClick={() => handleRowClick(prof)}
+                    className={`transition-all duration-300 ${
+                      prof.status === 'realizado' 
+                        ? 'cursor-pointer hover:bg-primary/5 group/row' 
+                        : 'opacity-80'
+                    }`}
+                  >
                     <td className="px-6 py-4 text-center">
                       {prof.status === 'realizado' ? (
-                        <div className="w-8 h-8 rounded-full bg-secondary/10 text-secondary flex items-center justify-center mx-auto" title="Escala Lançada">
-                          <CheckCircle2 size={16} />
+                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-500/30 animate-pulse-slow group-hover/row:scale-110 transition-transform" title="Escala Lançada - Clique para ver">
+                          <CheckCircle2 size={20} strokeWidth={3} />
                         </div>
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-error/10 text-error flex items-center justify-center mx-auto" title="Pendente">
-                          <XCircle size={16} />
+                        <div className="w-9 h-9 rounded-xl bg-error/10 text-error/60 flex items-center justify-center mx-auto border border-error/10" title="Pendente">
+                          <XCircle size={18} strokeWidth={2} />
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-extrabold text-on-surface">{prof.name}</p>
+                      <p className={`text-sm font-extrabold transition-colors ${prof.status === 'realizado' ? 'text-on-surface group-hover/row:text-primary' : 'text-on-surface/60'}`}>{prof.name}</p>
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-[10px] font-bold text-outline uppercase tracking-[0.2em]">{prof.role}</p>

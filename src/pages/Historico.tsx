@@ -294,7 +294,7 @@ export default function Historico() {
   );
 }
 
-function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor, isOnline, profId, month, vinculo, linha_cuidado, shifts, onDelete }: any) {
+function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor, isOnline, profId, month, year, vinculo, linha_cuidado, shifts, onDelete }: any) {
   const navigate = useNavigate();
 
   const handleViewScale = () => {
@@ -302,7 +302,9 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
       state: { 
         profId, 
         month,
-        autoSelect: true 
+        year,
+        autoSelect: true,
+        returnUrl: '/escala'
       } 
     });
   };
