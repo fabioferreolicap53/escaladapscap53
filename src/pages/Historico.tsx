@@ -53,7 +53,9 @@ export default function Historico() {
 
   const mesesNomes = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
-  const anosDisponiveis = Array.from(new Set(escalas.map(log => log.year))).sort((a, b) => b - a);
+  const anosDisponiveis = Array.from(new Set(escalas.map(log => Number(log.year) || new Date().getFullYear())))
+    .filter(Boolean)
+    .sort((a, b) => b - a);
 
   const filteredLogs = escalas.map(log => {
     const prof = profissionais.find(p => p.id === log.profId);

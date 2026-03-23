@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -23,7 +23,8 @@ import {
   Star,
   Clock,
   MinusCircle,
-  Plus
+  Plus,
+  Search
 } from 'lucide-react';
 
 const SHIFT_TYPES = [
@@ -47,7 +48,9 @@ export default function Lancamento() {
   const { addEscala, updateEscala, escalas } = useEscalas();
   const [selectedProfessional, setSelectedProfessional] = useState('');
   const [isProfSelectOpen, setIsProfSelectOpen] = useState(false);
+  const [searchProf, setSearchProf] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   
   // Controle do mês
@@ -112,6 +115,15 @@ export default function Lancamento() {
     setProfessionalShifts(generateEmptyShifts(month));
     setSaveError(null);
   };
+
+  useEffect(() => {
+    if (isProfSelectOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+    if (!isProfSelectOpen) {
+      setSearchProf('');
+    }
+  }, [isProfSelectOpen]);
 
   const handleSave = async () => {
     if (!selectedProfessional) return;
@@ -257,6 +269,20 @@ export default function Lancamento() {
     setIsPainting(false);
   };
   
+  // Ordenar e filtrar profissionais
+  const filteredAndSortedProfissionais = useMemo(() => {
+    if (!profissionais) return [];
+    
+    return [...profissionais]
+      .filter(p => 
+        (p.name || '').toLowerCase().includes(searchProf.toLowerCase()) ||
+        (p.role || '').toLowerCase().includes(searchProf.toLowerCase()) ||
+        (p.vinculo || '').toLowerCase().includes(searchProf.toLowerCase()) ||
+        (p.linha_cuidado || '').toLowerCase().includes(searchProf.toLowerCase())
+      )
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [profissionais, searchProf]);
+
   const currentProfessional = profissionais.find(p => p.id === selectedProfessional);
 
   // Lógica para estruturar o calendário em semanas
@@ -334,9 +360,9 @@ export default function Lancamento() {
           <div className="w-full md:w-1/3 p-6 flex flex-col justify-center border-r border-outline-variant/5 bg-surface-low/50 relative">
             <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-2">Selecionar Profissional</label>
             <div className="relative" ref={dropdownRef}>
-              <button 
+              <div 
                 onClick={() => setIsProfSelectOpen(!isProfSelectOpen)}
-                className={`w-full flex items-center gap-3 bg-surface border rounded-xl px-4 py-3 text-sm transition-all duration-300 group ${
+                className={`w-full flex items-center gap-3 bg-surface border rounded-xl px-4 py-3 text-sm transition-all duration-300 group cursor-pointer ${
                   isProfSelectOpen 
                     ? 'border-primary ring-4 ring-primary/10 shadow-lg' 
                     : 'border-outline-variant/20 hover:border-primary/40 hover:bg-surface-high shadow-sm'
@@ -354,17 +380,37 @@ export default function Lancamento() {
                   size={18} 
                   className={`text-outline transition-transform duration-300 ${isProfSelectOpen ? 'rotate-90' : '-rotate-90'}`} 
                 />
-              </button>
+              </div>
 
               {/* Dropdown Menu */}
               {isProfSelectOpen && (
-                <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-outline-variant/20 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
+                <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-outline-variant/20 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl flex flex-col">
+                  {/* Search Field inside Dropdown */}
+                  <div className="p-3 border-b border-outline-variant/10 bg-surface/50">
+                    <div className="relative group">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors" />
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Buscar profissional..."
+                        value={searchProf}
+                        onChange={(e) => setSearchProf(e.target.value)}
+                        className="w-full bg-surface-low border border-outline-variant/10 rounded-xl pl-9 pr-4 py-2 text-xs text-on-surface outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
+                      />
+                    </div>
+                  </div>
+
                   <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2">
-                    {profissionais.length === 0 ? (
-                      <div className="p-4 text-center text-outline italic text-xs">Nenhum profissional cadastrado</div>
+                    {filteredAndSortedProfissionais.length === 0 ? (
+                      <div className="p-8 text-center flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-surface-high flex items-center justify-center text-outline/30">
+                          <User size={20} />
+                        </div>
+                        <p className="text-xs text-outline font-bold uppercase tracking-widest italic">Nenhum profissional encontrado</p>
+                      </div>
                     ) : (
                       <div className="space-y-1">
-                        {profissionais.map(p => (
+                        {filteredAndSortedProfissionais.map(p => (
                           <button
                             key={p.id}
                             onClick={() => {
