@@ -11,16 +11,44 @@ import {
   XCircle,
   CalendarDays,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CheckCircle2,
+  X,
+  Sun,
+  Sunrise,
+  Sunset,
+  Home,
+  Palmtree,
+  Stethoscope,
+  Star,
+  Clock,
+  MinusCircle,
+  Plus
 } from 'lucide-react';
+
+const SHIFT_TYPES = [
+  { id: 'TD', label: 'TRAB DIA TODO', icon: Sun, color: 'emerald', category: 'Trabalho' },
+  { id: 'TM', label: 'TRAB MANHÃ', icon: Sunrise, color: 'emerald', category: 'Trabalho' },
+  { id: 'TT', label: 'TRAB TARDE', icon: Sunset, color: 'emerald', category: 'Trabalho' },
+  { id: 'HO', label: 'HOME OFFICE', icon: Home, color: 'sky', category: 'Administrativo' },
+  { id: 'FE', label: 'FERIADO', icon: Star, color: 'amber', category: 'Administrativo' },
+  { id: 'PF', label: 'PONTO FACULTATIVO', icon: Clock, color: 'orange', category: 'Administrativo' },
+  { id: 'LM', label: 'LICEN MÉDICA', icon: Stethoscope, color: 'rose', category: 'Ausência' },
+  { id: 'FR', label: 'FÉRIAS', icon: Palmtree, color: 'purple', category: 'Ausência' },
+  { id: 'LE', label: 'LICEN ESPECIAL', icon: Star, color: 'indigo', category: 'Ausência' },
+  { id: 'LR', label: 'NÃO REMUNERADA', icon: MinusCircle, color: 'slate', category: 'Ausência' },
+];
 
 export default function Lancamento() {
   const { categorias } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
   const { profissionais } = useProfissionais();
-  const { addEscala } = useEscalas();
+  const { addEscala, updateEscala, escalas } = useEscalas();
   const [selectedProfessional, setSelectedProfessional] = useState('');
+  const [isProfSelectOpen, setIsProfSelectOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   
   // Controle do mês
   const meses = [
@@ -63,6 +91,16 @@ export default function Lancamento() {
 
   // Estado da escala do profissional atual
   const [professionalShifts, setProfessionalShifts] = useState<(any | null)[]>(generateEmptyShifts(new Date().getMonth()));
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsProfSelectOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   
   // Estado para controle de "Pintura" (Drag to Fill)
   const [isPainting, setIsPainting] = useState(false);
@@ -75,8 +113,6 @@ export default function Lancamento() {
     setSaveError(null);
   };
 
-  const { escalas } = useEscalas();
-
   const handleSave = async () => {
     if (!selectedProfessional) return;
     
@@ -87,20 +123,13 @@ export default function Lancamento() {
       e.year === anoAtual
     );
 
-    if (escalaExistente) {
-      setSaveError(`Já existe uma escala salva para este profissional no mês de ${meses[mesAtual]}.`);
-      // Esconde o erro após 5 segundos
-      setTimeout(() => setSaveError(null), 5000);
-      return;
-    }
-    
     setIsSaving(true);
     setSaveError(null);
     
     const prof = profissionais.find(p => p.id === selectedProfessional);
     if (prof) {
       try {
-        await addEscala({
+        const payload = {
           profId: prof.id,
           name: prof.name,
           avatar: prof.avatar || '',
@@ -110,10 +139,25 @@ export default function Lancamento() {
           status: 'PUBLICADO',
           statusColor: 'bg-primary/10 text-primary border border-primary/20',
           vinculo: prof.vinculo || '',
-          time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          time: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', hour12: false}),
           shifts: JSON.stringify(professionalShifts) // Salva os turnos pintados como JSON string
-        });
-        navigate('/escala');
+        };
+
+        if (escalaExistente) {
+          // Se já existe, atualiza
+          await updateEscala(escalaExistente.id, payload);
+          setShowSuccessAlert("Escala atualizada com sucesso!");
+        } else {
+          // Se não existe, cria nova
+          await addEscala(payload);
+          setShowSuccessAlert("Escala salva com sucesso!");
+        }
+
+        // Aguarda um pouco para mostrar o alerta e depois redireciona
+        setTimeout(() => {
+          setShowSuccessAlert(null);
+          navigate('/escala');
+        }, 1500);
       } catch (error) {
         console.error("Erro ao salvar escala:", error);
         setSaveError("Erro ao salvar no banco de dados.");
@@ -284,102 +328,169 @@ export default function Lancamento() {
       </div>
 
       {/* Professional Selector Section */}
-      <section className="mb-8 bg-surface-low rounded-xl border border-outline-variant/5 overflow-hidden h-28">
-        <div className="flex items-stretch h-full">
-          {/* Seletor (Lado Esquerdo) */}
-          <div className="w-full md:w-1/3 p-6 flex flex-col justify-center border-r border-outline-variant/5 bg-surface-low/50">
+      <section className="mb-8 bg-surface-low rounded-xl border border-outline-variant/5 min-h-[112px]">
+        <div className="flex flex-col md:flex-row items-stretch min-h-[112px]">
+          {/* Seletor (Lado Esquerdo) - Modern Custom Dropdown */}
+          <div className="w-full md:w-1/3 p-6 flex flex-col justify-center border-r border-outline-variant/5 bg-surface-low/50 relative">
             <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-2">Selecionar Profissional</label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-outline" size={16} />
-              <select 
-                value={selectedProfessional}
-                onChange={(e) => setSelectedProfessional(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/20 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                onClick={() => setIsProfSelectOpen(!isProfSelectOpen)}
+                className={`w-full flex items-center gap-3 bg-surface border rounded-xl px-4 py-3 text-sm transition-all duration-300 group ${
+                  isProfSelectOpen 
+                    ? 'border-primary ring-4 ring-primary/10 shadow-lg' 
+                    : 'border-outline-variant/20 hover:border-primary/40 hover:bg-surface-high shadow-sm'
+                }`}
               >
-                <option value="">Escolha um profissional...</option>
-                {profissionais.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.role})</option>
-                ))}
-              </select>
+                <div className={`p-1.5 rounded-lg transition-colors ${selectedProfessional ? 'bg-primary/10 text-primary' : 'bg-surface-high text-outline'}`}>
+                  <User size={18} />
+                </div>
+                <span className={`flex-grow text-left truncate font-bold ${selectedProfessional ? 'text-on-surface' : 'text-outline/60'}`}>
+                  {selectedProfessional 
+                    ? profissionais.find(p => p.id === selectedProfessional)?.name 
+                    : "Escolha um profissional..."}
+                </span>
+                <ChevronLeft 
+                  size={18} 
+                  className={`text-outline transition-transform duration-300 ${isProfSelectOpen ? 'rotate-90' : '-rotate-90'}`} 
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isProfSelectOpen && (
+                <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-outline-variant/20 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl">
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2">
+                    {profissionais.length === 0 ? (
+                      <div className="p-4 text-center text-outline italic text-xs">Nenhum profissional cadastrado</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {profissionais.map(p => (
+                          <button
+                            key={p.id}
+                            onClick={() => {
+                              setSelectedProfessional(p.id);
+                              setIsProfSelectOpen(false);
+                            }}
+                            className={`w-full flex flex-col items-start gap-0.5 px-4 py-3 rounded-xl transition-all ${
+                              selectedProfessional === p.id 
+                                ? 'bg-primary text-surface' 
+                                : 'hover:bg-primary/5 text-on-surface'
+                            }`}
+                          >
+                            <span className="text-sm font-black tracking-tight">{p.name}</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedProfessional === p.id ? 'text-surface/70' : 'text-outline'}`}>
+                              {p.role} • {p.vinculo}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
           {/* Card de Informação (Preenchimento Perfeito) */}
-          <div className="flex-1 flex items-center relative overflow-hidden bg-surface/30">
+          <div className="flex-1 flex items-center relative overflow-hidden bg-surface/30 rounded-r-xl">
             {currentProfessional ? (
               <div className="flex items-center gap-6 px-8 w-full h-full animate-in fade-in slide-in-from-left-8 duration-500">
                 {/* Background Decorativo Sutil */}
-                <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none" />
+                <div className="absolute right-0 top-0 h-full w-full bg-gradient-to-l from-primary/5 via-transparent to-transparent pointer-events-none" />
                 
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center font-extrabold text-surface text-2xl shadow-xl shadow-primary/20 ring-4 ring-primary/10">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center font-black text-surface text-2xl shadow-xl shadow-primary/20 ring-4 ring-primary/10 relative z-10">
                   {currentProfessional.name.substring(0, 2).toUpperCase()}
                 </div>
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-black tracking-tight text-on-surface leading-none mb-1">
-                    {currentProfessional.name}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                <div className="relative z-10 flex flex-col">
+                  <h4 className="text-xl font-black text-on-surface tracking-tight leading-tight">{currentProfessional.name}</h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
                       {currentProfessional.role}
                     </span>
-                    {currentProfessional.vinculo && (
-                      <span className="px-2 py-0.5 rounded bg-secondary-container/20 text-secondary text-[10px] font-black uppercase tracking-widest italic border border-secondary/10">
-                        {currentProfessional.vinculo}
+                    <span className="px-2 py-0.5 rounded bg-secondary-container/10 text-secondary text-[10px] font-black uppercase tracking-widest border border-secondary/10">
+                      {currentProfessional.vinculo}
+                    </span>
+                    {currentProfessional.linha_cuidado && (
+                      <span className="px-2 py-0.5 rounded bg-surface-high text-outline text-[10px] font-black uppercase tracking-widest border border-outline-variant/10">
+                        {currentProfessional.linha_cuidado}
                       </span>
                     )}
-                    <span className="w-1 h-1 rounded-full bg-outline/30" />
-                    <span className="text-outline text-xs font-medium">ID: #00{currentProfessional.id}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-4 px-8 text-outline/40 italic">
-                <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-outline/20 flex items-center justify-center">
-                  <User size={24} />
+              <div className="flex items-center gap-4 px-8 text-outline/40 italic text-sm">
+                <div className="w-12 h-12 rounded-xl border-2 border-dashed border-outline-variant/20 flex items-center justify-center">
+                  <User size={20} />
                 </div>
-                <span className="text-sm font-medium tracking-wide">Aguardando seleção de profissional...</span>
+                <span>Aguardando seleção de profissional...</span>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* Shift Palette (Action Bar) */}
-      <section className={`mb-8 p-6 bg-surface-low rounded-xl border border-outline-variant/5 transition-all duration-300 ${!selectedProfessional ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-outline">Selecione o Tipo de Lançamento</h3>
+      {/* Shift Palette (Action Bar) - Modern Redesign */}
+      <section className={`mb-8 p-6 bg-surface-low/50 backdrop-blur-sm rounded-2xl border border-outline-variant/10 transition-all duration-500 ${!selectedProfessional ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary mb-1">Seletor de Lançamento</h3>
+            <p className="text-[10px] text-outline font-bold uppercase tracking-widest opacity-60">Escolha um turno para pintar no calendário</p>
+          </div>
           
           {/* Seletor de Mês Integrado */}
-          <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-4 bg-surface px-4 py-2 rounded-lg border border-outline-variant/10 shadow-sm w-full sm:w-auto min-w-[220px]">
-            <CalendarDays size={16} className="text-primary shrink-0 hidden sm:block" />
-            <button onClick={prevMonth} className="text-outline hover:text-primary transition-colors p-2 sm:p-1 bg-surface-high sm:bg-transparent rounded-lg sm:rounded-none">
-              <ChevronLeft size={16} />
+          <div className="flex items-center gap-1 bg-surface-high/50 p-1 rounded-xl border border-outline-variant/10 shadow-inner">
+            <button onClick={prevMonth} className="w-10 h-10 flex items-center justify-center text-outline hover:text-primary hover:bg-surface rounded-lg transition-all active:scale-90">
+              <ChevronLeft size={20} />
             </button>
-            <span className="text-sm font-bold text-on-surface flex-grow text-center whitespace-nowrap px-2">
-              {meses[mesAtual]} / {anoAtual}
-            </span>
-            <button onClick={nextMonth} className="text-outline hover:text-primary transition-colors p-2 sm:p-1 bg-surface-high sm:bg-transparent rounded-lg sm:rounded-none">
-              <ChevronRight size={16} />
+            <div className="flex items-center gap-3 px-4 min-w-[160px] justify-center">
+              <CalendarDays size={16} className="text-primary/60" />
+              <span className="text-sm font-black text-on-surface uppercase tracking-wider">
+                {meses[mesAtual]} / {anoAtual}
+              </span>
+            </div>
+            <button onClick={nextMonth} className="w-10 h-10 flex items-center justify-center text-outline hover:text-primary hover:bg-surface rounded-lg transition-all active:scale-90">
+              <ChevronRight size={20} />
             </button>
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-2">
-          {/* Working States */}
-          <PaletteButton label="TRAB DIA TODO" type="TD" color="emerald" active={activeShiftType?.type === 'TD'} onClick={() => setActiveShiftType({label: 'TRAB DIA TODO', color: 'emerald', type: 'TD'})} />
-          <PaletteButton label="TRAB MANHÃ" type="TM" color="emerald" active={activeShiftType?.type === 'TM'} onClick={() => setActiveShiftType({label: 'TRAB MANHÃ', color: 'emerald', type: 'TM'})} />
-          <PaletteButton label="TRAB TARDE" type="TT" color="emerald" active={activeShiftType?.type === 'TT'} onClick={() => setActiveShiftType({label: 'TRAB TARDE', color: 'emerald', type: 'TT'})} />
-          
-          {/* Admin States */}
-          <PaletteButton label="HOME" type="HO" color="sky" active={activeShiftType?.type === 'HO'} onClick={() => setActiveShiftType({label: 'HOME', color: 'sky', type: 'HO'})} />
-          <PaletteButton label="FERIADO" type="FE" color="amber" active={activeShiftType?.type === 'FE'} onClick={() => setActiveShiftType({label: 'FERIADO', color: 'amber', type: 'FE'})} />
-          
-          {/* Absence States */}
-          <PaletteButton label="LICEN MÉDICA" type="LM" color="rose" active={activeShiftType?.type === 'LM'} onClick={() => setActiveShiftType({label: 'LICEN MÉDICA', color: 'rose', type: 'LM'})} />
-          <PaletteButton label="FÉRIAS" type="FR" color="purple" active={activeShiftType?.type === 'FR'} onClick={() => setActiveShiftType({label: 'FÉRIAS', color: 'purple', type: 'FR'})} />
-          <PaletteButton label="LICEN ESPECIAL" type="LE" color="indigo" active={activeShiftType?.type === 'LE'} onClick={() => setActiveShiftType({label: 'LICEN ESPECIAL', color: 'indigo', type: 'LE'})} />
-          <PaletteButton label="PONTO FACULTATIVO" type="PF" color="orange" active={activeShiftType?.type === 'PF'} onClick={() => setActiveShiftType({label: 'PONTO FACULTATIVO', color: 'orange', type: 'PF'})} />
-          <PaletteButton label="LICEN NÃO REMUNERADA" type="LR" color="slate" active={activeShiftType?.type === 'LR'} onClick={() => setActiveShiftType({label: 'LICEN NÃO REMUNERADA', color: 'slate', type: 'LR'})} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
+          {SHIFT_TYPES.map((shift) => (
+            <button
+              key={shift.id}
+              onClick={() => setActiveShiftType({label: shift.label, color: shift.color, type: shift.id})}
+              className={`group flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-300 relative overflow-hidden active:scale-95 ${
+                activeShiftType?.type === shift.id
+                  ? `bg-${shift.color}-500/10 border-${shift.color}-500 shadow-lg shadow-${shift.color}-500/20`
+                  : 'bg-surface border-transparent hover:border-outline-variant/30 hover:bg-surface-high shadow-sm'
+              }`}
+            >
+              {/* Active Indicator Bar */}
+              {activeShiftType?.type === shift.id && (
+                <div className={`absolute top-0 left-0 w-full h-1 bg-${shift.color}-500`} />
+              )}
+              
+              <div className={`mb-2 p-2 rounded-xl transition-all duration-300 ${
+                activeShiftType?.type === shift.id
+                  ? `bg-${shift.color}-500 text-surface scale-110 shadow-md shadow-${shift.color}-500/40`
+                  : `bg-${shift.color}-500/10 text-${shift.color}-500 group-hover:scale-110`
+              }`}>
+                <shift.icon size={20} strokeWidth={2.5} />
+              </div>
+              
+              <span className={`text-[9px] font-black text-center leading-tight uppercase tracking-tighter transition-colors ${
+                activeShiftType?.type === shift.id ? 'text-on-surface' : 'text-outline group-hover:text-on-surface'
+              }`}>
+                {shift.label}
+              </span>
+              
+              {/* Category Badge - Only visible when not active or on hover */}
+              <div className="mt-1.5 px-1.5 py-0.5 rounded bg-surface-low/50 border border-outline-variant/5">
+                <span className="text-[7px] font-bold text-outline/40 uppercase tracking-widest">{shift.category}</span>
+              </div>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -392,8 +503,8 @@ export default function Lancamento() {
         {/* Days of week Header - Refined */}
         <div className="grid grid-cols-7 border-b border-outline-variant/20 bg-surface-low/80 backdrop-blur-md sticky top-0 z-10">
           {daysOfWeek.map(day => (
-            <div key={day} className="py-2 sm:py-4 text-center border-r border-outline-variant/10 last:border-r-0">
-              <span className={`text-[9px] sm:text-[11px] font-black tracking-[0.1em] sm:tracking-[0.3em] ${day === 'DOM' || day === 'SÁB' ? 'text-error/80' : 'text-primary/70'}`}>
+            <div key={day} className="py-4 sm:py-6 text-center border-r border-outline-variant/10 last:border-r-0 bg-surface-high/20">
+              <span className={`text-[11px] sm:text-[13px] font-black tracking-[0.2em] sm:tracking-[0.4em] uppercase ${day === 'DOM' || day === 'SÁB' ? 'text-rose-500' : 'text-primary'}`}>
                 {day}
               </span>
             </div>
@@ -401,59 +512,42 @@ export default function Lancamento() {
         </div>
 
         {/* Calendar Rows - Sharp Definitions */}
-        <div className="flex flex-col min-h-[500px] bg-surface">
+        <div className="flex flex-col bg-surface">
           {currentProfessional ? (
             weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="grid grid-cols-7 border-b border-outline-variant/10 last:border-b-0">
+              <div key={weekIndex} className="grid grid-cols-7 border-b border-outline-variant/10 last:border-b-0 min-h-[120px]">
                 {week.map((cell, cellIndex) => {
-                  if (cell.type === 'empty') {
-                    return (
-                      <div 
-                        key={cellIndex} 
-                        className="h-20 sm:h-28 border-r border-outline-variant/10 last:border-r-0 bg-surface-high/5 relative overflow-hidden"
-                      >
-                        {/* Subtle pattern for empty cells */}
-                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-                      </div>
-                    );
-                  }
-                  
-                  const date = cell.index + 1;
+                  const day = cell.type === 'day' ? cell.index + 1 : null;
+                  const isToday = day === new Date().getDate() && mesAtual === new Date().getMonth() && anoAtual === new Date().getFullYear();
                   const isWeekend = (cellIndex === 0 || cellIndex === 6);
-                  const isSunday = cellIndex === 0;
-                  const isToday = date === new Date().getDate() && mesAtual === new Date().getMonth();
 
                   return (
-                    <div 
-                      key={cellIndex}
-                      className={`h-20 sm:h-28 border-r border-outline-variant/10 last:border-r-0 flex flex-col relative transition-all duration-300 hover:bg-primary/5 group/cell ${isWeekend ? 'bg-surface-low/30' : ''}`}
-                    >
-                      {/* Date Indicator - Modern & Premium */}
-                      <div className="absolute top-1 sm:top-2 left-1 sm:left-2 z-10">
-                        <div className={`flex items-center justify-center min-w-[20px] h-[20px] sm:min-w-[24px] sm:h-[24px] px-1 rounded-md sm:rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${
-                          isToday 
-                            ? 'bg-primary text-surface shadow-lg shadow-primary/30 scale-110' 
-                            : isWeekend 
-                              ? 'text-error/70 bg-error/5 border border-error/10' 
-                              : 'text-outline/40 bg-surface-high/20 border border-outline-variant/5 group-hover/cell:text-primary group-hover/cell:border-primary/20'
-                        }`}>
-                          {date.toString().padStart(2, '0')}
+                    <div key={cellIndex} className={`relative flex flex-col group/day border-r border-outline-variant/10 last:border-r-0 ${!day ? 'bg-surface-high/10' : 'bg-surface'}`}>
+                      {/* Day Number Badge */}
+                      {day && (
+                        <div className="absolute top-2 left-2 z-20">
+                          <span className={`flex items-center justify-center w-7 h-7 text-[11px] font-black rounded-lg transition-all duration-300 ${
+                            isToday 
+                              ? 'bg-primary text-surface shadow-lg shadow-primary/30 scale-110' 
+                              : isWeekend 
+                                ? 'text-error/70 bg-error/5 border border-error/10' 
+                                : 'text-outline/40 group-hover/day:text-primary group-hover/day:bg-primary/5'
+                          }`}>
+                            {String(day).padStart(2, '0')}
+                          </span>
                         </div>
-                      </div>
-                      
-                      {/* Shift Content - Perfect Centering */}
-                      <div className="flex-1 flex items-center justify-center p-1 sm:p-2 mt-3 sm:mt-2">
-                        <div className="w-full max-w-[95%] aspect-[1.6/1] sm:aspect-[1.6/1] flex items-center justify-center">
-                          <ShiftCell 
-                            shift={cell.shift} 
-                            onMouseDown={() => handleMouseDown(cell.index)} 
-                            onMouseEnter={() => handleMouseEnter(cell.index)} 
-                          />
-                        </div>
-                      </div>
+                      )}
 
-                      {/* Subtle hover indicator at bottom */}
-                      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover/cell:scale-x-100 transition-transform duration-500 origin-left" />
+                      {/* Shift Content Area */}
+                      <div className="flex-grow flex flex-col pt-10">
+                        {day && (
+                          <ShiftCell 
+                            shift={cell.shift}
+                            onMouseDown={() => handleMouseDown(cell.index)}
+                            onMouseEnter={() => handleMouseEnter(cell.index)}
+                          />
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -467,99 +561,68 @@ export default function Lancamento() {
           )}
         </div>
       </div>
+
+      {showSuccessAlert && (
+        <div className="fixed top-6 right-6 z-[100] animate-in slide-in-from-right-full duration-300">
+          <div className="bg-surface border border-primary/20 rounded-xl shadow-2xl p-4 flex items-center gap-4 min-w-[320px]">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary shrink-0">
+              <CheckCircle2 size={24} />
+            </div>
+            <div className="flex-grow">
+              <p className="text-sm font-bold text-on-surface">{showSuccessAlert}</p>
+              <p className="text-[10px] text-outline font-medium">O histórico foi atualizado.</p>
+            </div>
+            <button onClick={() => setShowSuccessAlert(null)} className="text-outline hover:text-on-surface p-1">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
 
-function PaletteButton({ label, type, color, active, onClick }: { label: string, type: string, color: string, active?: boolean, onClick?: () => void }) {
-  const getColorClasses = () => {
-    switch(color) {
-      case 'emerald': return active ? 'bg-emerald-950/50 border-emerald-500/50 scale-105 shadow-md shadow-emerald-500/20' : 'bg-emerald-900/20 border-emerald-500/20 hover:border-emerald-400';
-      case 'sky': return active ? 'bg-sky-950/50 border-sky-500/50 scale-105 shadow-md shadow-sky-500/20' : 'bg-sky-950/30 border-sky-500/30 hover:border-sky-400';
-      case 'amber': return active ? 'bg-amber-950/50 border-amber-500/50 scale-105 shadow-md shadow-amber-500/20' : 'bg-amber-950/30 border-amber-500/30 hover:border-amber-400';
-      case 'rose': return active ? 'bg-rose-950/50 border-rose-500/50 scale-105 shadow-md shadow-rose-500/20' : 'bg-rose-950/40 border-rose-500/40 hover:border-rose-400';
-      case 'purple': return active ? 'bg-purple-950/50 border-purple-500/50 scale-105 shadow-md shadow-purple-500/20' : 'bg-purple-950/30 border-purple-500/30 hover:border-purple-400';
-      case 'indigo': return active ? 'bg-indigo-950/50 border-indigo-500/50 scale-105 shadow-md shadow-indigo-500/20' : 'bg-indigo-950/30 border-indigo-500/30 hover:border-indigo-400';
-      case 'orange': return active ? 'bg-orange-950/50 border-orange-500/50 scale-105 shadow-md shadow-orange-500/20' : 'bg-orange-950/30 border-orange-500/30 hover:border-orange-400';
-      default: return active ? 'bg-slate-800 border-slate-400 scale-105 shadow-md' : 'bg-slate-800/50 border-slate-500/30 hover:border-slate-400';
-    }
-  };
-
-  const getDotColor = () => {
-    switch(color) {
-      case 'emerald': return 'bg-emerald-400';
-      case 'sky': return 'bg-sky-400';
-      case 'amber': return 'bg-amber-400';
-      case 'rose': return 'bg-rose-500';
-      case 'purple': return 'bg-purple-400';
-      case 'indigo': return 'bg-indigo-400';
-      case 'orange': return 'bg-orange-400';
-      default: return 'bg-slate-400';
-    }
-  };
-
-  const getTextColor = () => {
-    switch(color) {
-      case 'emerald': return 'text-emerald-100';
-      case 'sky': return 'text-sky-100';
-      case 'amber': return 'text-amber-100';
-      case 'rose': return 'text-rose-100';
-      case 'purple': return 'text-purple-100';
-      case 'indigo': return 'text-indigo-100';
-      case 'orange': return 'text-orange-100';
-      default: return 'text-slate-300';
-    }
-  };
-
-  return (
-    <button onClick={onClick} className={`group flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${getColorClasses()}`}>
-      <span className={`w-2 h-2 rounded-full ${getDotColor()}`}></span>
-      <span className={`text-[10px] font-bold uppercase tracking-tight ${getTextColor()}`}>{label}</span>
-    </button>
-  );
-}
-
-function ShiftCell({ shift, onMouseDown, onMouseEnter }: { shift: any, onMouseDown?: () => void, onMouseEnter?: () => void, key?: number | string }) {
+function ShiftCell({ shift, onMouseDown, onMouseEnter }: { shift: any, onMouseDown?: () => void, onMouseEnter?: () => void }) {
   if (shift === 'weekend') {
-    return <div className="w-full h-full bg-surface-high/10 rounded-lg"></div>;
-  }
-
-  if (!shift) {
     return (
-      <div 
-        className="w-full h-full flex items-center justify-center p-0.5" 
-        onMouseDown={onMouseDown}
-        onMouseEnter={onMouseEnter}
-      >
-        <div className="w-full h-full rounded-xl border border-outline-variant/10 bg-surface-low/50 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 shadow-inner" />
-      </div>
+      <div className="flex-grow bg-surface-high/30 border-r border-outline-variant/5 last:border-r-0" />
     );
   }
 
-  const getColorClasses = () => {
-    switch(shift.color) {
-      case 'emerald': return 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.15)]';
-      case 'sky': return 'bg-sky-500/20 border-sky-500/40 text-sky-300 shadow-[0_0_15px_rgba(14,165,233,0.15)]';
-      case 'purple': return 'bg-purple-500/20 border-purple-500/40 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.15)]';
-      case 'rose': return 'bg-rose-500/20 border-rose-500/40 text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]';
-      case 'indigo': return 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.15)]';
-      case 'amber': return 'bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.15)]';
-      case 'orange': return 'bg-orange-500/20 border-orange-500/40 text-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.15)]';
-      default: return 'bg-slate-500/20 border-slate-500/40 text-slate-300';
+  const getColorClasses = (color: string) => {
+    switch(color) {
+      case 'emerald': return 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-[inset_0_0_12px_rgba(16,185,129,0.1)]';
+      case 'sky': return 'bg-sky-500/20 border-sky-500/40 text-sky-400 shadow-[inset_0_0_12px_rgba(14,165,233,0.1)]';
+      case 'amber': return 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-[inset_0_0_12px_rgba(245,158,11,0.1)]';
+      case 'rose': return 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-[inset_0_0_12px_rgba(244,63,94,0.1)]';
+      case 'purple': return 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-[inset_0_0_12px_rgba(168,85,247,0.1)]';
+      case 'indigo': return 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 shadow-[inset_0_0_12px_rgba(99,102,241,0.1)]';
+      case 'orange': return 'bg-orange-500/20 border-orange-500/40 text-orange-400 shadow-[inset_0_0_12px_rgba(249,115,22,0.1)]';
+      default: return 'bg-slate-500/20 border-slate-500/40 text-slate-400';
     }
   };
 
   return (
     <div 
-      className="w-full h-full flex items-center justify-center p-0.5" 
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
+      className={`flex-grow border-r border-outline-variant/10 last:border-r-0 transition-all duration-200 cursor-pointer relative group/cell min-h-[100px] ${shift ? getColorClasses(shift.color) : 'hover:bg-primary/5'}`}
     >
-      <div className={`w-full h-full rounded-xl border-2 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:scale-[1.05] hover:brightness-125 active:scale-95 ${getColorClasses()} ${shift.active ? 'brightness-125' : ''}`}>
-        <span className="text-[10px] font-black leading-[1.1] tracking-tight uppercase text-center px-1">
-          {shift.label}
-        </span>
-      </div>
+      {shift && (
+        <div className="absolute inset-1.5 flex flex-col items-center justify-center text-center p-1 rounded-xl border border-current/20 backdrop-blur-[2px] animate-in fade-in zoom-in-95 duration-300">
+          <span className="text-[10px] font-black leading-tight uppercase tracking-tighter drop-shadow-sm">
+            {shift.label}
+          </span>
+          <div className="mt-1 w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor]" />
+        </div>
+      )}
+      {!shift && (
+        <div className="absolute inset-0 opacity-0 group-hover/cell:opacity-100 flex items-center justify-center transition-opacity">
+          <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Plus size={14} className="text-primary" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

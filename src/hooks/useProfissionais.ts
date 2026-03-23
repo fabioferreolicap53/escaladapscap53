@@ -6,7 +6,6 @@ export interface Profissional {
   name: string;
   avatar: string;
   role: string;
-  hours: string;
   vinculo: string;
   linha_cuidado?: string;
 }
@@ -15,9 +14,7 @@ const fetcher = async () => {
   const collectionName = getCollectionName('profissionais');
   try {
     const records = await pb.collection(collectionName).getFullList({
-      sort: '-created',
-      // Trazer apenas os campos necessários para economizar memória
-      fields: 'id,name,avatar,role,hours,vinculo,linha_cuidado'
+      sort: '-created'
     });
     
     return records.map(record => ({
@@ -25,7 +22,6 @@ const fetcher = async () => {
       name: record.name,
       avatar: record.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(record.name)}&background=random&color=fff`,
       role: record.role,
-      hours: record.hours,
       vinculo: record.vinculo,
       linha_cuidado: record.linha_cuidado || ''
     }));
@@ -66,7 +62,7 @@ export function useProfissionais() {
       mutate(current => {
         if (!current) return current;
         return current.map(p => p.id === id ? { ...p, ...dados } : p);
-      }, false);
+      }, true); // Forçar revalidação com o backend
     } catch (error) {
       console.error("Erro ao atualizar profissional:", error);
       throw error;

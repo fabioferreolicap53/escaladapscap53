@@ -80,12 +80,27 @@ export function useEscalas() {
     }
   };
 
+  const updateEscala = async (id: string, atualizacao: Partial<Escala>) => {
+    try {
+      const record = await pb.collection(collectionName).update(id, atualizacao);
+      mutate(current => {
+        if (!current) return current;
+        return current.map(e => e.id === id ? { ...e, ...atualizacao } : e);
+      }, false);
+      return record;
+    } catch (error) {
+      console.error("Erro ao atualizar escala:", error);
+      throw error;
+    }
+  };
+
   return {
     escalas: data || [],
     isLoading,
     isError: error,
     addEscala,
     deleteEscala,
+    updateEscala,
     mutate
   };
 }

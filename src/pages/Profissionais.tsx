@@ -34,7 +34,6 @@ export default function Profissionais() {
   const [novoProfissional, setNovoProfissional] = useState({
     name: '',
     role: '',
-    hours: '',
     vinculo: '',
     linha_cuidado: ''
   });
@@ -50,7 +49,6 @@ export default function Profissionais() {
       await updateProfissional(editingProfissionalId, {
         name: novoProfissional.name,
         role: novoProfissional.role,
-        hours: novoProfissional.hours || "40h / Semanal",
         vinculo: novoProfissional.vinculo || "CLT",
         linha_cuidado: novoProfissional.linha_cuidado || ""
       });
@@ -60,7 +58,6 @@ export default function Profissionais() {
         name: novoProfissional.name,
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(novoProfissional.name)}&background=random&color=fff`,
         role: novoProfissional.role,
-        hours: novoProfissional.hours || "40h / Semanal",
         vinculo: novoProfissional.vinculo || "CLT",
         linha_cuidado: novoProfissional.linha_cuidado || ""
       });
@@ -72,7 +69,7 @@ export default function Profissionais() {
   const fecharModal = () => {
     setIsModalOpen(false);
     setEditingProfissionalId(null);
-    setNovoProfissional({ name: '', role: '', hours: '', vinculo: '', linha_cuidado: '' });
+    setNovoProfissional({ name: '', role: '', vinculo: '', linha_cuidado: '' });
   };
 
   const handleEditClick = (prof: any) => {
@@ -80,7 +77,6 @@ export default function Profissionais() {
     setNovoProfissional({
       name: prof.name,
       role: prof.role,
-      hours: prof.hours,
       vinculo: prof.vinculo || '',
       linha_cuidado: prof.linha_cuidado || ''
     });
@@ -141,7 +137,7 @@ export default function Profissionais() {
           <button 
             onClick={() => {
               setEditingProfissionalId(null);
-              setNovoProfissional({ name: '', role: '', hours: '', vinculo: '' });
+              setNovoProfissional({ name: '', role: '', vinculo: '', linha_cuidado: '' });
               setIsModalOpen(true);
             }}
             className="px-4 sm:px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-surface text-sm font-bold rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/10 hover:brightness-110 transition-all active:scale-95 w-full sm:w-auto"
@@ -230,7 +226,7 @@ export default function Profissionais() {
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Profissional</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Categoria Profissional</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Vínculo</th>
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Carga Horária</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Linha de Cuidado</th>
                 <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-right">Ações</th>
               </tr>
             </thead>
@@ -339,21 +335,6 @@ export default function Profissionais() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Carga Horária</label>
-                <select 
-                  value={novoProfissional.hours}
-                  onChange={(e) => setNovoProfissional({...novoProfissional, hours: e.target.value})}
-                  className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
-                >
-                  <option value="">Selecione...</option>
-                  <option value="20h / Semanal">20h / Semanal</option>
-                  <option value="24h / Semanal">24h / Semanal</option>
-                  <option value="36h / Semanal">36h / Semanal</option>
-                  <option value="40h / Semanal">40h / Semanal</option>
-                </select>
-              </div>
-
-              <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Tipo de Vínculo</label>
                 <select 
                   value={novoProfissional.vinculo}
@@ -433,7 +414,7 @@ export default function Profissionais() {
               <p className="text-sm text-outline leading-relaxed">
                 {confirmacaoExclusaoPasso === 0 
                   ? <>Você está prestes a excluir <strong>{profissionais.find(p => p.id === showExcluirConfirm)?.name}</strong>. Esta ação não poderá ser desfeita.</>
-                  : <><strong>Esta é a segunda e última confirmação.</strong> Os dados serão removidos permanentemente do PocketBase.</>
+                  : <><strong>Esta é a segunda e última confirmação.</strong> Os dados serão removidos permanentemente.</>
                 }
               </p>
             </div>
@@ -461,47 +442,43 @@ export default function Profissionais() {
   );
 }
 
-function TableRow({ prof, onEdit, onDelete, key }: { prof: any, onEdit: () => void, onDelete: () => void, key?: any }) {
-  const { name, id, avatar, role, hours, vinculo } = prof;
+function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, onDelete: () => void }) {
+  const { name, id, role, vinculo, linha_cuidado } = prof;
   return (
     <tr 
       onClick={onEdit}
       className="group hover:bg-surface-high transition-colors cursor-pointer"
     >
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <img src={avatar} alt={name} className="w-10 h-10 rounded-lg object-cover shadow-sm" />
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-surface-low bg-green-500 shadow-sm"></div>
-          </div>
-          <div>
-            <p className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">{name}</p>
-            <p className="text-[10px] text-outline">ID: {id}</p>
-          </div>
+      <td className="px-6 py-6">
+        <div className="flex flex-col">
+          <p className="text-xl font-black text-on-surface group-hover:text-primary transition-colors leading-tight tracking-tight">{name}</p>
+          <p className="text-[11px] text-outline mt-1 font-medium opacity-70">ID: {id}</p>
         </div>
       </td>
-      <td className="px-6 py-4">
-        <p className="text-sm text-on-surface-variant font-bold">{role}</p>
+      <td className="px-6 py-6">
+        <p className="text-base text-on-surface-variant font-bold tracking-tight">{role}</p>
       </td>
-      <td className="px-6 py-4">
-        <span className="px-3 py-1 rounded-full bg-secondary-container/20 text-secondary text-[10px] font-black uppercase tracking-widest border border-secondary/10">
+      <td className="px-6 py-6">
+        <span className="px-4 py-1.5 rounded-full bg-secondary-container/10 text-secondary text-[11px] font-black uppercase tracking-[0.15em] border border-secondary/20 shadow-sm">
           {vinculo || "CLT"}
         </span>
       </td>
-      <td className="px-6 py-4">
-        <p className="text-sm text-on-surface-variant font-medium">{hours}</p>
+      <td className="px-6 py-6">
+        <span className="text-[11px] font-black text-primary uppercase tracking-[0.15em] bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10 shadow-sm">
+          {linha_cuidado || "---"}
+        </span>
       </td>
-      <td className="px-6 py-4 text-right">
-        <div className="flex justify-end gap-1">
+      <td className="px-6 py-6 text-right">
+        <div className="flex justify-end gap-2">
           <button 
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
             }}
             title="Editar Profissional"
-            className="text-outline hover:text-primary transition-colors p-2 hover:bg-surface-bright rounded-lg active:scale-90"
+            className="text-outline hover:text-primary transition-all p-2.5 hover:bg-primary/10 rounded-xl active:scale-90"
           >
-            <Edit2 size={18} />
+            <Edit2 size={22} />
           </button>
           <button 
             onClick={(e) => {
@@ -509,9 +486,9 @@ function TableRow({ prof, onEdit, onDelete, key }: { prof: any, onEdit: () => vo
               onDelete();
             }}
             title="Excluir Profissional"
-            className="text-outline hover:text-error transition-colors p-2 hover:bg-surface-bright rounded-lg active:scale-90"
+            className="text-outline hover:text-error transition-all p-2.5 hover:bg-error/10 rounded-xl active:scale-90"
           >
-            <Trash2 size={18} />
+            <Trash2 size={22} />
           </button>
         </div>
       </td>

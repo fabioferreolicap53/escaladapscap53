@@ -5,13 +5,13 @@ import { useSettings } from '../contexts/SettingsContext';
 import { 
   Filter, 
   Download, 
-  MoreVertical, 
   Calendar as CalendarIcon,
   ChevronsDown,
   Plus,
   X,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Pencil
 } from 'lucide-react';
 
 import { useEscalas } from '../hooks/useEscalas';
@@ -54,6 +54,7 @@ export default function Historico() {
     const prof = profissionais.find(p => p.id === log.profId);
     return {
       ...log,
+      vinculo: prof?.vinculo || log.vinculo || '',
       linha_cuidado: prof?.linha_cuidado || '',
       monthYear: `${mesesNomes[log.month] || ''} / ${log.year || new Date().getFullYear()}`,
       isOnline: true // Apenas para manter o estilo visual
@@ -213,7 +214,7 @@ export default function Historico() {
               <p className="text-sm text-outline leading-relaxed">
                 {confirmacaoExclusaoPasso === 0 
                   ? <>Você deseja remover o registro de escala de <strong>{escalas.find(e => e.id === showExcluirConfirm)?.name}</strong>?</>
-                  : <><strong>Atenção:</strong> Esta ação excluirá permanentemente este lançamento do histórico do PocketBase.</>
+                  : <><strong>Atenção:</strong> Esta ação excluirá permanentemente este lançamento do histórico.</>
                 }
               </p>
             </div>
@@ -271,118 +272,158 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
   }
   const shiftSummary = Object.values(shiftCounts).sort((a, b) => b.count - a.count);
 
-   const getDotColor = (color: string) => {
-     switch(color) {
-       case 'emerald': return 'bg-emerald-400';
-       case 'sky': return 'bg-sky-400';
-       case 'amber': return 'bg-amber-400';
-       case 'rose': return 'bg-rose-500';
-       case 'purple': return 'bg-purple-400';
-       case 'indigo': return 'bg-indigo-400';
-       case 'orange': return 'bg-orange-400';
-       default: return 'bg-slate-400';
-     }
-   };
+  const getDotColor = (color: string) => {
+    switch(color) {
+      case 'emerald': return 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
+      case 'sky': return 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.4)]';
+      case 'amber': return 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]';
+      case 'rose': return 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]';
+      case 'purple': return 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]';
+      case 'indigo': return 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]';
+      case 'orange': return 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.4)]';
+      default: return 'bg-slate-400';
+    }
+  };
 
-   return (
+  const getBadgeBg = (color: string) => {
+    switch(color) {
+      case 'emerald': return 'bg-emerald-500/10 border-emerald-500/20';
+      case 'sky': return 'bg-sky-500/10 border-sky-500/20';
+      case 'amber': return 'bg-amber-500/10 border-amber-500/20';
+      case 'rose': return 'bg-rose-500/10 border-rose-500/20';
+      case 'purple': return 'bg-purple-500/10 border-purple-500/20';
+      case 'indigo': return 'bg-indigo-500/10 border-indigo-500/20';
+      case 'orange': return 'bg-orange-500/10 border-orange-500/20';
+      default: return 'bg-surface-high border-outline-variant/10';
+    }
+  };
+
+  const formatTime24h = (timeStr: string) => {
+    if (!timeStr) return '--:--';
+    // Se já estiver no formato HH:mm e não contiver AM/PM
+    if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+    
+    try {
+      // Tenta converter de qualquer formato para 24h
+      const [time, modifier] = timeStr.split(' ');
+      let [hours, minutes] = time.split(':');
+      
+      if (hours === '12') {
+        hours = '00';
+      }
+      
+      if (modifier && modifier.toUpperCase() === 'PM') {
+        hours = (parseInt(hours, 10) + 12).toString();
+      }
+      
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+    } catch (e) {
+      return timeStr; // Fallback para o original se falhar
+    }
+  };
+
+  return (
     <div 
-      className="group relative flex flex-col md:flex-row md:items-center bg-surface-low p-4 sm:p-5 rounded-xl border border-transparent hover:border-primary/20 hover:bg-surface-high transition-all duration-300 cursor-pointer active:scale-[0.995] gap-4 md:gap-0"
+      className="group relative flex flex-col md:flex-row md:items-center bg-surface-low p-4 sm:p-5 rounded-2xl border border-outline-variant/5 hover:border-primary/30 hover:bg-surface-high transition-all duration-500 cursor-pointer active:scale-[0.995] gap-4 md:gap-8 shadow-sm hover:shadow-md md:justify-between"
     >
-      {/* Top Section for Mobile / Left Section for Desktop */}
+      {/* 1. Professional Section (Left) */}
       <div 
         onClick={handleViewScale}
-        className="flex items-center justify-between md:justify-start w-full md:w-auto md:flex-1"
+        className="flex items-center justify-between md:justify-start w-full md:w-[25%] lg:w-[20%] shrink-0"
       >
         <div className="flex items-center gap-4">
           {/* Time Section */}
           <div className="w-14 sm:w-16 flex flex-col items-center border-r border-outline-variant/15 pr-4 sm:pr-6 shrink-0">
-            <span className="text-lg sm:text-xl font-bold tracking-tighter text-on-surface">{time}</span>
+            <span className="text-lg sm:text-xl font-bold tracking-tighter text-on-surface">{formatTime24h(time)}</span>
             <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase">Registro</span>
           </div>
           
-          {/* Name and Avatar Section */}
+          {/* Name Section */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="relative shrink-0">
-              <img src={avatar} alt={name} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-surface-bright shadow-sm" />
-              {isOnline && (
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border-2 border-surface-low shadow-sm"></span>
-              )}
-            </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-sm sm:text-base font-bold text-on-surface group-hover:text-primary transition-colors truncate">{name}</span>
+              <span className="text-lg sm:text-xl font-extrabold text-on-surface group-hover:text-primary transition-colors truncate">{name}</span>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Middle/Bottom Section - Details */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 w-full md:w-auto md:flex-1 md:justify-end pl-18 sm:pl-20 md:pl-0 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0">
-        
-        {/* Resumo de Turnos (Novo) */}
-        {shiftSummary.length > 0 && (
-          <div 
-            onClick={handleViewScale}
-            className="flex flex-wrap gap-2 w-full sm:w-auto md:flex-1 justify-start sm:justify-center"
-          >
-            {shiftSummary.map(summary => (
-              <div key={summary.label} className="flex items-center gap-1.5 bg-surface-high px-2 py-1 rounded-md border border-outline-variant/10" title={`${summary.count} dias de ${summary.label}`}>
-                <span className={`w-2 h-2 rounded-full ${getDotColor(summary.color)}`} />
-                <span className="text-[10px] font-bold text-on-surface">{summary.count}</span>
-                <span className="text-[9px] uppercase tracking-wider text-outline">{summary.label.substring(0, 3)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Centered and Highlighted Reference Section - Clean Style */}
+      {/* 2. Resumo de Turnos (Center-Left) */}
+      {shiftSummary.length > 0 && (
         <div 
           onClick={handleViewScale}
-          className="flex flex-col items-start sm:items-center justify-center md:px-4 w-full sm:w-auto"
+          className="flex flex-wrap gap-2 w-full md:w-auto md:flex-1 justify-start md:justify-center border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0"
         >
-          <span className="text-[9px] sm:text-[11px] text-primary/60 font-black uppercase mb-1 sm:mb-2 tracking-[0.2em] sm:tracking-[0.3em] leading-none">Referência Temporal</span>
-          <div className="flex items-center gap-2 sm:gap-3 text-primary transition-all duration-500 transform group-hover:scale-[1.02] w-full sm:w-auto justify-center">
-            <CalendarIcon size={16} className="opacity-90 sm:w-[18px] sm:h-[18px]" />
-            <span className="text-xs sm:text-sm font-extrabold tracking-wider sm:tracking-widest italic uppercase leading-none">{monthYear}</span>
+          {shiftSummary.map(summary => (
+            <div 
+              key={summary.label} 
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105 ${getBadgeBg(summary.color)}`}
+              title={`${summary.count} dias de ${summary.label}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${getDotColor(summary.color)}`} />
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs font-black text-on-surface">{summary.count}</span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-outline/80">{summary.label.substring(0, 3)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 3. Referência Temporal (Center-Right) */}
+      <div 
+        onClick={handleViewScale}
+        className="flex flex-col items-start md:items-center justify-center w-full md:w-auto md:px-6 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0"
+      >
+        <span className="text-[9px] sm:text-[11px] text-primary/60 font-black uppercase mb-1 sm:mb-2 tracking-[0.2em] sm:tracking-[0.3em] leading-none">Referência Temporal</span>
+        <div className="flex items-center gap-2 sm:gap-3 text-primary transition-all duration-500 transform group-hover:scale-[1.02] w-full sm:w-auto justify-start md:justify-center">
+          <CalendarIcon size={16} className="opacity-90 sm:w-[18px] sm:h-[18px]" />
+          <span className="text-xs sm:text-sm font-extrabold tracking-wider sm:tracking-widest italic uppercase leading-none">{monthYear}</span>
+        </div>
+      </div>
+
+      {/* 4. Details and Actions Section (Right) */}
+      <div className="flex items-center justify-between md:justify-end w-full md:w-[25%] lg:w-[20%] gap-4 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 shrink-0">
+        <div 
+          onClick={handleViewScale}
+          className="flex flex-col items-start md:items-end min-w-[150px] md:min-w-0 flex-grow"
+        >
+          <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider md:text-right">Categoria / Detalhes</span>
+          <div className="flex flex-col items-start md:items-end w-full">
+            <span className="text-xs sm:text-sm font-bold text-on-surface leading-tight truncate max-w-full md:max-w-[180px] mb-0.5">{role}</span>
+            {vinculo && (
+              <span className="text-[9px] sm:text-[10px] text-secondary font-black uppercase tracking-[0.1em] mt-1 leading-none">
+                VÍNCULO: {vinculo}
+              </span>
+            )}
+            {linha_cuidado && (
+              <span className="text-[9px] sm:text-[10px] text-primary/80 font-black uppercase tracking-[0.1em] mt-1 leading-none">
+                LINHA: {linha_cuidado}
+              </span>
+            )}
           </div>
         </div>
-
-        {/* Details and Actions Section */}
-        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto md:flex-1 gap-4">
-          <div 
-            onClick={handleViewScale}
-            className="flex flex-col items-start sm:items-end min-w-[150px] sm:min-w-[200px]"
+        
+        <div className="flex gap-1 shrink-0">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewScale();
+            }}
+            className="p-2 text-outline hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+            title="Editar lançamento"
           >
-            <span className="text-[9px] sm:text-[10px] text-outline font-bold uppercase mb-1 tracking-wider sm:text-right">Categoria / Detalhes</span>
-            <div className="flex flex-col items-start sm:items-end w-full">
-              <span className="text-xs sm:text-sm font-bold text-on-surface leading-tight truncate max-w-full sm:max-w-[200px]">{role}</span>
-              {vinculo && (
-                <span className="text-[9px] sm:text-[10px] text-secondary font-black uppercase tracking-widest mt-0.5">
-                  Vínculo: {vinculo}
-                </span>
-              )}
-              {linha_cuidado && (
-                <span className="text-[9px] sm:text-[10px] text-primary/80 font-black uppercase tracking-widest mt-0.5">
-                  Linha: {linha_cuidado}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(id);
-              }}
-              className="p-2 text-outline hover:text-error hover:bg-error/10 rounded-lg transition-all"
-              title="Excluir lançamento"
-            >
-              <Trash2 size={18} />
-            </button>
-            <div className="hidden md:block opacity-0 group-hover:opacity-100 transition-opacity p-2 text-outline hover:text-on-surface hover:bg-surface-bright rounded-lg shrink-0">
-              <MoreVertical size={20} />
-            </div>
-          </div>
+            <Pencil size={18} />
+          </button>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(id);
+            }}
+            className="p-2 text-outline hover:text-error hover:bg-error/10 rounded-lg transition-all"
+            title="Excluir lançamento"
+          >
+            <Trash2 size={18} />
+          </button>
         </div>
       </div>
     </div>
