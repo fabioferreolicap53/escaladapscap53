@@ -28,7 +28,8 @@ export default function Profissionais() {
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     categoria: '',
-    vinculo: ''
+    vinculo: '',
+    linha_cuidado: ''
   });
   const [editingProfissionalId, setEditingProfissionalId] = useState<string | null>(null);
   const [novoProfissional, setNovoProfissional] = useState({
@@ -109,6 +110,7 @@ export default function Profissionais() {
     // Filtros Avançados
     if (filters.categoria && prof.role !== filters.categoria) return false;
     if (filters.vinculo && prof.vinculo !== filters.vinculo) return false;
+    if (filters.linha_cuidado && prof.linha_cuidado !== filters.linha_cuidado) return false;
 
     // Busca por Texto
     if (searchTerm && 
@@ -119,11 +121,11 @@ export default function Profissionais() {
   });
 
   const clearFilters = () => {
-    setFilters({ categoria: '', vinculo: '' });
+    setFilters({ categoria: '', vinculo: '', linha_cuidado: '' });
     setSearchTerm('');
   };
 
-  const hasActiveFilters = filters.categoria || filters.vinculo || searchTerm;
+  const hasActiveFilters = filters.categoria || filters.vinculo || filters.linha_cuidado || searchTerm;
 
   return (
     <Layout activePath="/profissionais">
@@ -133,7 +135,80 @@ export default function Profissionais() {
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Gestão de Equipe</span>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface">Profissionais Cadastrados</h2>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          {/* Filtros reposicionados aqui */}
+          <div className="relative w-full sm:w-auto">
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-4 sm:px-5 py-2.5 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 border transition-all w-full sm:w-auto ${
+                hasActiveFilters 
+                  ? 'bg-primary/10 text-primary border-primary/30' 
+                  : 'bg-surface-high text-on-surface border-outline-variant/15 hover:bg-surface-bright'
+              }`}
+            >
+              <Filter size={18} />
+              {hasActiveFilters ? 'Filtros Ativos' : 'Filtros'}
+            </button>
+
+            {showFilters && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowFilters(false)} 
+                />
+                <div className="absolute top-full right-0 mt-2 w-full sm:w-80 bg-surface border border-outline-variant/20 rounded-2xl shadow-2xl p-5 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary">Filtragem Avançada</h4>
+                    <button 
+                      onClick={clearFilters}
+                      className="text-[10px] font-bold text-outline hover:text-error transition-colors uppercase tracking-tighter"
+                    >
+                      Limpar Tudo
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Categoria</label>
+                      <select 
+                        value={filters.categoria}
+                        onChange={(e) => setFilters({...filters, categoria: e.target.value})}
+                        className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                      >
+                        <option value="">Todas as categorias</option>
+                        {categorias.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Vínculo</label>
+                      <select 
+                        value={filters.vinculo}
+                        onChange={(e) => setFilters({...filters, vinculo: e.target.value})}
+                        className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                      >
+                        <option value="">Todos os vínculos</option>
+                        {vinculos.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Linha de Cuidado</label>
+                      <select 
+                        value={filters.linha_cuidado}
+                        onChange={(e) => setFilters({...filters, linha_cuidado: e.target.value})}
+                        className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                      >
+                        <option value="">Todas as linhas</option>
+                        {linhasCuidado.map(l => <option key={l.id} value={l.name}>{l.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           <button 
             onClick={() => {
               setEditingProfissionalId(null);
@@ -148,74 +223,7 @@ export default function Profissionais() {
         </div>
       </div>
 
-      {/* Dashboard / Filters Section */}
-      <div className="flex justify-end gap-6 mb-8">
-        <div className="w-full md:w-1/3 flex gap-3 relative">
-          <div 
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex-grow bg-surface-low rounded-xl px-4 py-3 sm:py-0 flex items-center justify-center sm:justify-start gap-3 transition-all cursor-pointer border ${
-              hasActiveFilters 
-                ? 'border-primary text-primary bg-primary/5' 
-                : 'border-outline-variant/10 text-outline hover:bg-surface-high hover:border-outline-variant/30'
-            }`}
-          >
-            <Filter size={16} />
-            <span className="text-xs font-bold uppercase tracking-wider">
-              {hasActiveFilters ? 'Filtros Ativos' : 'Filtragem Avançada'}
-            </span>
-          </div>
-
-          {showFilters && (
-            <>
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setShowFilters(false)} 
-              />
-              <div className="absolute top-full right-0 mt-2 w-full sm:w-80 bg-surface border border-outline-variant/20 rounded-2xl shadow-2xl p-5 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-primary">Filtros</h4>
-                  <button 
-                    onClick={clearFilters}
-                    className="text-[10px] font-bold text-outline hover:text-error transition-colors uppercase tracking-tighter"
-                  >
-                    Limpar Tudo
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Categoria</label>
-                    <select 
-                      value={filters.categoria}
-                      onChange={(e) => setFilters({...filters, categoria: e.target.value})}
-                      className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
-                    >
-                      <option value="">Todas as categorias</option>
-                      {categorias.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Vínculo</label>
-                    <select 
-                      value={filters.vinculo}
-                      onChange={(e) => setFilters({...filters, vinculo: e.target.value})}
-                      className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
-                    >
-                      <option value="">Todos os vínculos</option>
-                      {vinculos.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          <button className="w-12 h-full bg-surface-low rounded-xl flex items-center justify-center text-outline hover:text-primary border border-outline-variant/10 hover:border-outline-variant/30 transition-all active:scale-90">
-            <Download size={18} />
-          </button>
-        </div>
-      </div>
+      {/* Dashboard / Filters Section - REMOVIDO DAQUI */}
 
       {/* Table Container */}
       <div className="bg-surface-low rounded-xl overflow-hidden border border-outline-variant/10">
@@ -268,17 +276,11 @@ export default function Profissionais() {
         
         {/* Pagination */}
         <div className="px-8 py-4 bg-surface/30 border-t border-outline-variant/10 flex justify-between items-center">
-          <span className="text-xs text-outline">Mostrando <span className="text-on-surface font-bold">1-10</span> de <span className="text-on-surface font-bold">124</span> profissionais</span>
+          <span className="text-xs text-outline">
+            Mostrando <span className="text-on-surface font-bold">{filteredProfissionais.length}</span> {filteredProfissionais.length === 1 ? 'profissional' : 'profissionais'}
+          </span>
           <div className="flex gap-2">
-            <button className="w-8 h-8 rounded border border-outline-variant/20 flex items-center justify-center text-outline hover:bg-surface hover:text-on-surface">
-              <ChevronLeft size={16} />
-            </button>
             <button className="w-8 h-8 rounded bg-primary-container text-primary text-xs font-bold">1</button>
-            <button className="w-8 h-8 rounded border border-outline-variant/20 flex items-center justify-center text-outline hover:bg-surface hover:text-on-surface text-xs font-bold">2</button>
-            <button className="w-8 h-8 rounded border border-outline-variant/20 flex items-center justify-center text-outline hover:bg-surface hover:text-on-surface text-xs font-bold">3</button>
-            <button className="w-8 h-8 rounded border border-outline-variant/20 flex items-center justify-center text-outline hover:bg-surface hover:text-on-surface">
-              <ChevronRight size={16} />
-            </button>
           </div>
         </div>
       </div>
@@ -452,19 +454,18 @@ function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, o
       <td className="px-6 py-6">
         <div className="flex flex-col">
           <p className="text-xl font-black text-on-surface group-hover:text-primary transition-colors leading-tight tracking-tight">{name}</p>
-          <p className="text-[11px] text-outline mt-1 font-medium opacity-70">ID: {id}</p>
         </div>
       </td>
       <td className="px-6 py-6">
-        <p className="text-base text-on-surface-variant font-bold tracking-tight">{role}</p>
+        <p className="text-[12px] font-black text-on-surface/90 uppercase tracking-[0.2em]">{role}</p>
       </td>
       <td className="px-6 py-6">
-        <span className="px-4 py-1.5 rounded-full bg-secondary-container/10 text-secondary text-[11px] font-black uppercase tracking-[0.15em] border border-secondary/20 shadow-sm">
-          {vinculo || "CLT"}
+        <span className="text-[12px] font-black text-on-surface/90 uppercase tracking-[0.2em]">
+          {vinculo || "---"}
         </span>
       </td>
       <td className="px-6 py-6">
-        <span className="text-[11px] font-black text-primary uppercase tracking-[0.15em] bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10 shadow-sm">
+        <span className="text-[12px] font-black text-on-surface/90 uppercase tracking-[0.2em]">
           {linha_cuidado || "---"}
         </span>
       </td>

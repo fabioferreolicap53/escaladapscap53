@@ -19,7 +19,7 @@ import { useProfissionais } from '../hooks/useProfissionais';
 
 export default function Historico() {
   const navigate = useNavigate();
-  const { categorias, vinculos, searchTerm, setSearchTerm } = useSettings();
+  const { categorias, vinculos, linhasCuidado, searchTerm, setSearchTerm } = useSettings();
   const { escalas, isLoading, deleteEscala } = useEscalas();
   const { profissionais } = useProfissionais();
   const [showFilters, setShowFilters] = useState(false);
@@ -27,7 +27,10 @@ export default function Historico() {
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
   const [filters, setFilters] = useState({
     categoria: '',
-    vinculo: ''
+    vinculo: '',
+    linha_cuidado: '',
+    mes: '',
+    ano: ''
   });
 
   const handleExcluirEscala = async (id: string) => {
@@ -42,13 +45,15 @@ export default function Historico() {
   };
 
   const clearFilters = () => {
-    setFilters({ categoria: '', vinculo: '' });
+    setFilters({ categoria: '', vinculo: '', linha_cuidado: '', mes: '', ano: '' });
     setSearchTerm('');
   };
 
-  const hasActiveFilters = filters.categoria || filters.vinculo || searchTerm;
+  const hasActiveFilters = filters.categoria || filters.vinculo || filters.linha_cuidado || filters.mes || filters.ano || searchTerm;
 
   const mesesNomes = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+
+  const anosDisponiveis = Array.from(new Set(escalas.map(log => log.year))).sort((a, b) => b - a);
 
   const filteredLogs = escalas.map(log => {
     const prof = profissionais.find(p => p.id === log.profId);
@@ -71,9 +76,14 @@ export default function Historico() {
       if (!matchesSearch) return false;
     }
 
-    // Filtros de categoria/vínculo
+    // Filtros de categoria/vínculo/linha de cuidado
     if (filters.categoria && log.role !== filters.categoria) return false;
     if (filters.vinculo && log.vinculo !== filters.vinculo) return false;
+    if (filters.linha_cuidado && log.linha_cuidado !== filters.linha_cuidado) return false;
+
+    // Filtro de referência temporal
+    if (filters.mes !== '' && log.month !== parseInt(filters.mes)) return false;
+    if (filters.ano !== '' && log.year !== parseInt(filters.ano)) return false;
     
     return true;
   });
@@ -105,7 +115,7 @@ export default function Historico() {
                 className="fixed inset-0 z-10" 
                 onClick={() => setShowFilters(false)} 
               />
-              <div className="absolute top-full right-0 mt-2 w-full sm:w-72 bg-surface border border-outline-variant/20 rounded-2xl shadow-2xl p-5 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute top-full right-0 mt-2 w-full sm:w-80 bg-surface border border-outline-variant/20 rounded-2xl shadow-2xl p-5 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="text-xs font-black uppercase tracking-widest text-primary">Filtragem Inteligente</h4>
                   <button 
@@ -117,6 +127,35 @@ export default function Historico() {
                 </div>
 
                 <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Mês</label>
+                      <select 
+                        value={filters.mes}
+                        onChange={(e) => setFilters({...filters, mes: e.target.value})}
+                        className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                      >
+                        <option value="">Todos</option>
+                        {mesesNomes.map((mes, index) => (
+                          <option key={mes} value={index}>{mes}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Ano</label>
+                      <select 
+                        value={filters.ano}
+                        onChange={(e) => setFilters({...filters, ano: e.target.value})}
+                        className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                      >
+                        <option value="">Todos</option>
+                        {anosDisponiveis.map(ano => (
+                          <option key={ano} value={ano}>{ano}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Categoria</label>
                     <select 
@@ -140,6 +179,18 @@ export default function Historico() {
                       {vinculos.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
                     </select>
                   </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Linha de Cuidado</label>
+                    <select 
+                      value={filters.linha_cuidado}
+                      onChange={(e) => setFilters({...filters, linha_cuidado: e.target.value})}
+                      className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                    >
+                      <option value="">Todas as linhas</option>
+                      {linhasCuidado.map(l => <option key={l.id} value={l.name}>{l.name}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
             </>
@@ -158,11 +209,10 @@ export default function Historico() {
       {/* Main Stacked List (The Feed) */}
       <div className="flex flex-col gap-4 mb-10">
         <div className="flex items-center gap-4 mb-2">
-          <h3 className="text-sm font-bold text-outline uppercase tracking-widest">Atividade Recente</h3>
-          <div className="h-[1px] grow bg-outline-variant/15"></div>
-          <span className="text-[10px] text-outline font-medium uppercase">
+          <span className="text-[10px] text-primary font-black uppercase tracking-widest">
             {isLoading ? 'Carregando...' : `${filteredLogs.length} ${filteredLogs.length === 1 ? 'Registro Encontrado' : 'Registros Encontrados'}`}
           </span>
+          <div className="h-[1px] grow bg-outline-variant/15"></div>
         </div>
 
         {isLoading ? (
