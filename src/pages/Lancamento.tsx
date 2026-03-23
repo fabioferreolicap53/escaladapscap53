@@ -377,9 +377,9 @@ export default function Lancamento() {
                                 : 'hover:bg-primary/5 text-on-surface'
                             }`}
                           >
-                            <span className="text-sm font-black tracking-tight">{p.name}</span>
+                            <span className="text-sm font-black tracking-tight uppercase">{p.name}</span>
                             <span className={`text-[10px] font-bold uppercase tracking-widest ${selectedProfessional === p.id ? 'text-surface/70' : 'text-outline'}`}>
-                              {p.role} • {p.vinculo}
+                              {p.role} • {p.vinculo} {p.linha_cuidado ? `• ${p.linha_cuidado}` : ''}
                             </span>
                           </button>
                         ))}
