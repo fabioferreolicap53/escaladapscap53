@@ -333,7 +333,7 @@ export default function Lancamento() {
       {/* Conductor Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
         <div className="max-w-2xl">
-          <h2 className="text-4xl font-extrabold tracking-tighter text-on-surface mb-2">Lançamento de Escala</h2>
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter text-on-surface mb-2">Lançamento de Escala</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full xl:w-auto items-center">
           {saveError && (

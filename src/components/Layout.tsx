@@ -143,7 +143,7 @@ export function Layout({ children, activePath = '/' }: LayoutProps) {
         </div>
 
         {/* Page Content */}
-        <div className="mt-12 sm:mt-12 pt-4 sm:pt-0 p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto overflow-x-hidden relative custom-scrollbar">
+        <div className="mt-[88px] sm:mt-12 pt-4 sm:pt-0 p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto overflow-x-hidden relative custom-scrollbar">
           {children}
         </div>
 
