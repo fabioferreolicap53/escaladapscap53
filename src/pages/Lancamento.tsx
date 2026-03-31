@@ -17,21 +17,23 @@ import {
   Sun,
   Sunrise,
   Sunset,
-  Home,
+  Coffee,
   Palmtree,
   Stethoscope,
   Star,
   Clock,
   MinusCircle,
   Plus,
-  Search
+  Search,
+  History
 } from 'lucide-react';
 
 const SHIFT_TYPES = [
   { id: 'TD', label: 'TRAB DIA TODO', icon: Sun, color: 'emerald', category: 'Trabalho' },
   { id: 'TM', label: 'TRAB MANHÃ', icon: Sunrise, color: 'emerald', category: 'Trabalho' },
   { id: 'TT', label: 'TRAB TARDE', icon: Sunset, color: 'emerald', category: 'Trabalho' },
-  { id: 'HO', label: 'HOME OFFICE', icon: Home, color: 'sky', category: 'Administrativo' },
+  { id: 'FO', label: 'FOLGA', icon: Coffee, color: 'sky', category: 'Administrativo' },
+  { id: 'BH', label: 'BANCO DE HORAS', icon: History, color: 'indigo', category: 'Administrativo' },
   { id: 'FE', label: 'FERIADO', icon: Star, color: 'amber', category: 'Administrativo' },
   { id: 'PF', label: 'PONTO FACULTATIVO', icon: Clock, color: 'orange', category: 'Administrativo' },
   { id: 'LM', label: 'LICEN MÉDICA', icon: Stethoscope, color: 'rose', category: 'Ausência' },
@@ -520,7 +522,7 @@ export default function Lancamento() {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-2.5">
           {SHIFT_TYPES.map((shift) => (
             <button
               key={shift.id}
