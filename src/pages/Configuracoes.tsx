@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Layout } from '../components/Layout';
-import { Plus, X, Loader2 } from 'lucide-react';
+import { Plus, X, Loader2, Moon, Sun } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 
 export default function Configuracoes() {
   const { 
+    theme, toggleTheme,
     linhasCuidado, addLinha, removeLinha, isLoadingLinhas,
     categorias, addCategoria, removeCategoria, isLoadingCategorias,
     vinculos, addVinculo, removeVinculo, isLoadingVinculos
@@ -56,6 +57,24 @@ export default function Configuracoes() {
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Sistema</span>
           <h2 className="text-4xl font-extrabold tracking-tight text-on-surface">Configurações</h2>
         </div>
+        
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 px-4 py-2.5 bg-surface-low border border-outline-variant/20 rounded-xl hover:border-primary/50 transition-all active:scale-95"
+        >
+          {theme === 'dark' ? (
+            <>
+              <Sun size={18} className="text-tertiary" />
+              <span className="text-sm font-bold hidden sm:inline">Modo Claro</span>
+            </>
+          ) : (
+            <>
+              <Moon size={18} className="text-primary" />
+              <span className="text-sm font-bold hidden sm:inline">Modo Escuro</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Seção de Cadastros Base */}
