@@ -443,14 +443,14 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
           onClick={handleViewScale}
           className="flex flex-col items-start md:items-center w-full"
         >
-          <span className="text-[9px] text-outline font-black uppercase mb-1.5 tracking-[0.2em] w-full text-left md:text-center">Categoria / Detalhes</span>
+          <span className="text-[9px] text-outline font-black uppercase mb-1.5 tracking-[0.2em] w-full text-left md:text-center">Linha / Categoria</span>
           <div className="flex flex-col items-start md:items-center w-full gap-1">
-            <span className="text-[11px] font-black text-on-surface leading-none uppercase tracking-[0.15em] mb-0.5 w-full text-left md:text-center truncate">{role}</span>
             {linha_cuidado && (
-              <span className="text-[10px] font-black text-primary uppercase tracking-[0.15em] leading-none w-full text-left md:text-center truncate">
+              <span className="text-[11px] font-black text-primary uppercase tracking-[0.15em] mb-0.5 w-full text-left md:text-center truncate">
                 LINHA: {linha_cuidado}
               </span>
             )}
+            <span className="text-[10px] font-black text-on-surface leading-none uppercase tracking-[0.15em] w-full text-left md:text-center truncate">{role}</span>
             {vinculo && (
               <span className="text-[10px] font-black text-outline uppercase tracking-[0.15em] leading-none w-full text-left md:text-center truncate">
                 VÍNCULO: {vinculo}

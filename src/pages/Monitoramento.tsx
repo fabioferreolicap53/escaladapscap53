@@ -216,8 +216,8 @@ export default function Monitoramento() {
               <tr className="bg-surface/50 border-b border-outline-variant/10">
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-outline w-16 text-center">Status</th>
                 <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-outline">Profissional</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-outline">Categoria</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-outline">Vínculo / Linha</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-outline">Linha de Cuidado</th>
+                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-outline">Categoria / Vínculo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/5">
@@ -262,16 +262,14 @@ export default function Monitoramento() {
                       <p className={`text-sm font-extrabold transition-colors ${prof.status === 'realizado' ? 'text-on-surface group-hover/row:text-primary' : 'text-on-surface/60'}`}>{prof.name}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-[10px] font-bold text-outline uppercase tracking-[0.2em]">{prof.role}</p>
+                      <span className="text-[10px] font-bold text-on-surface/80 uppercase tracking-[0.2em]">{prof.linha_cuidado || "---"}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-bold text-on-surface/80 uppercase tracking-[0.2em]">{prof.vinculo || "---"}</span>
-                        {prof.linha_cuidado && (
-                          <span className="text-[9px] font-bold text-primary/70 uppercase tracking-widest truncate max-w-[200px]">
-                            {prof.linha_cuidado}
-                          </span>
-                        )}
+                        <p className="text-[10px] font-bold text-outline uppercase tracking-[0.2em]">{prof.role}</p>
+                        <span className="text-[9px] font-bold text-primary/70 uppercase tracking-widest truncate max-w-[200px]">
+                          {prof.vinculo || "---"}
+                        </span>
                       </div>
                     </td>
                   </tr>

@@ -308,6 +308,19 @@ export default function Profissionais() {
                 </th>
                 <th 
                   className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline cursor-pointer hover:text-primary transition-colors group"
+                  onClick={() => handleSort('linha_cuidado')}
+                >
+                  <div className="flex items-center gap-2">
+                    Linha de Cuidado
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      {sortConfig.key === 'linha_cuidado' ? (
+                        sortConfig.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                      ) : <ArrowUpDown size={12} />}
+                    </span>
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline cursor-pointer hover:text-primary transition-colors group"
                   onClick={() => handleSort('role')}
                 >
                   <div className="flex items-center gap-2">
@@ -327,19 +340,6 @@ export default function Profissionais() {
                     Vínculo
                     <span className="opacity-0 group-hover:opacity-100 transition-opacity">
                       {sortConfig.key === 'vinculo' ? (
-                        sortConfig.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
-                      ) : <ArrowUpDown size={12} />}
-                    </span>
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline cursor-pointer hover:text-primary transition-colors group"
-                  onClick={() => handleSort('linha_cuidado')}
-                >
-                  <div className="flex items-center gap-2">
-                    Linha de Cuidado
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      {sortConfig.key === 'linha_cuidado' ? (
                         sortConfig.direction === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
                       ) : <ArrowUpDown size={12} />}
                     </span>
@@ -619,16 +619,16 @@ function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, o
         </div>
       </td>
       <td className="px-6 py-6">
+        <span className="text-[12px] font-black text-on-surface/90 uppercase tracking-[0.2em]">
+          {linha_cuidado || "---"}
+        </span>
+      </td>
+      <td className="px-6 py-6">
         <p className="text-[12px] font-black text-on-surface/90 uppercase tracking-[0.2em]">{role}</p>
       </td>
       <td className="px-6 py-6">
         <span className="text-[12px] font-black text-on-surface/90 uppercase tracking-[0.2em]">
           {vinculo || "---"}
-        </span>
-      </td>
-      <td className="px-6 py-6">
-        <span className="text-[12px] font-black text-on-surface/90 uppercase tracking-[0.2em]">
-          {linha_cuidado || "---"}
         </span>
       </td>
       <td className="px-6 py-6 text-right">
