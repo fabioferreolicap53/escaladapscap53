@@ -571,7 +571,7 @@ export default function Lancamento() {
         <div className="grid grid-cols-7 border-b border-outline-variant/20 bg-surface-low/80 backdrop-blur-md sticky top-0 z-10">
           {daysOfWeek.map(day => (
             <div key={day} className="py-4 sm:py-6 text-center border-r border-outline-variant/10 last:border-r-0 bg-surface-high/20">
-              <span className={`text-[11px] sm:text-[13px] font-black tracking-[0.2em] sm:tracking-[0.4em] uppercase ${day === 'DOM' || day === 'SÁB' ? 'text-rose-500' : 'text-primary'}`}>
+              <span className={`text-[11px] sm:text-[13px] font-black tracking-[0.2em] sm:tracking-[0.4em] uppercase ${day === 'DOM' || day === 'SÁB' ? 'text-on-surface' : 'text-primary'}`}>
                 {day}
               </span>
             </div>
@@ -658,14 +658,14 @@ function ShiftCell({ shift, onMouseDown, onMouseEnter }: { shift: any, onMouseDo
 
   const getColorClasses = (color: string) => {
     switch(color) {
-      case 'emerald': return 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 shadow-[inset_0_0_12px_rgba(16,185,129,0.1)]';
-      case 'sky': return 'bg-sky-500/20 border-sky-500/40 text-sky-400 shadow-[inset_0_0_12px_rgba(14,165,233,0.1)]';
-      case 'amber': return 'bg-amber-500/20 border-amber-500/40 text-amber-400 shadow-[inset_0_0_12px_rgba(245,158,11,0.1)]';
-      case 'rose': return 'bg-rose-500/20 border-rose-500/40 text-rose-400 shadow-[inset_0_0_12px_rgba(244,63,94,0.1)]';
-      case 'purple': return 'bg-purple-500/20 border-purple-500/40 text-purple-400 shadow-[inset_0_0_12px_rgba(168,85,247,0.1)]';
-      case 'indigo': return 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400 shadow-[inset_0_0_12px_rgba(99,102,241,0.1)]';
-      case 'orange': return 'bg-orange-500/20 border-orange-500/40 text-orange-400 shadow-[inset_0_0_12px_rgba(249,115,22,0.1)]';
-      default: return 'bg-slate-500/20 border-slate-500/40 text-slate-400';
+      case 'emerald': return 'bg-emerald-500/20 border-emerald-500/40 text-on-surface shadow-[inset_0_0_12px_rgba(16,185,129,0.1)]';
+      case 'sky': return 'bg-sky-500/20 border-sky-500/40 text-on-surface shadow-[inset_0_0_12px_rgba(14,165,233,0.1)]';
+      case 'amber': return 'bg-amber-500/20 border-amber-500/40 text-on-surface shadow-[inset_0_0_12px_rgba(245,158,11,0.1)]';
+      case 'rose': return 'bg-rose-500/20 border-rose-500/40 text-on-surface shadow-[inset_0_0_12px_rgba(244,63,94,0.1)]';
+      case 'purple': return 'bg-purple-500/20 border-purple-500/40 text-on-surface shadow-[inset_0_0_12px_rgba(168,85,247,0.1)]';
+      case 'indigo': return 'bg-indigo-500/20 border-indigo-500/40 text-on-surface shadow-[inset_0_0_12px_rgba(99,102,241,0.1)]';
+      case 'orange': return 'bg-orange-500/20 border-orange-500/40 text-on-surface shadow-[inset_0_0_12px_rgba(249,115,22,0.1)]';
+      default: return 'bg-slate-500/20 border-slate-500/40 text-on-surface';
     }
   };
 

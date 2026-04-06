@@ -249,11 +249,11 @@ export default function Monitoramento() {
                   >
                     <td className="px-6 py-4 text-center">
                       {prof.status === 'realizado' ? (
-                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-500/30 animate-pulse-slow group-hover/row:scale-110 transition-transform" title="Escala Lançada - Clique para ver">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-on-surface flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-500/30 animate-pulse-slow group-hover/row:scale-110 transition-transform" title="Escala Lançada - Clique para ver">
                           <CheckCircle2 size={20} strokeWidth={3} />
                         </div>
                       ) : (
-                        <div className="w-9 h-9 rounded-xl bg-error/10 text-error/60 flex items-center justify-center mx-auto border border-error/10" title="Pendente">
+                        <div className="w-9 h-9 rounded-xl bg-error/10 text-on-surface/60 flex items-center justify-center mx-auto border border-error/10" title="Pendente">
                           <XCircle size={18} strokeWidth={2} />
                         </div>
                       )}

@@ -28,17 +28,17 @@
   --bg-surface-low: #243a5c;
   --bg-surface-high: #2d466b;
   --bg-surface-bright: #3a567d;
-  --text-primary: #a0c9ff;
+  --text-primary: #ffffff;
   --bg-primary-container: #0f4c81;
-  --text-on-surface: #dae2fd;
-  --text-on-surface-variant: #c2c7d1;
-  --border-outline: #8c919a;
+  --text-on-surface: #ffffff;
+  --text-on-surface-variant: #ffffff;
+  --border-outline: #ffffff;
   --border-outline-variant: #42474f;
-  --text-error: #ffb4ab;
+  --text-error: #ffffff;
   --bg-error-container: #93000a;
-  --text-tertiary: #ffb780;
+  --text-tertiary: #ffffff;
   --bg-tertiary-container: #743b00;
-  --text-secondary: #b6c8e2;
+  --text-secondary: #ffffff;
   --bg-secondary-container: #37485e;
 }
 
