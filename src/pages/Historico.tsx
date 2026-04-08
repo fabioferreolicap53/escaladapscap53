@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Layout } from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
@@ -12,11 +12,40 @@ import {
   X,
   Trash2,
   AlertTriangle,
-  Pencil
+  Pencil,
+  Sun,
+  Sunrise,
+  Sunset,
+  Coffee,
+  History as HistoryIcon,
+  Star,
+  Clock,
+  Stethoscope,
+  Palmtree,
+  MinusCircle
 } from 'lucide-react';
 
 import { useEscalas } from '../hooks/useEscalas';
 import { useProfissionais } from '../hooks/useProfissionais';
+
+// Mapeamento criativo para etiquetas e ícones no resumo
+const getShiftSummaryMeta = (label: string) => {
+  const meta: Record<string, { short: string, icon: any }> = {
+    'TRAB DIA TODO': { short: 'TDT', icon: Sun },
+    'TRAB MANHÃ': { short: 'MAN', icon: Sunrise },
+    'TRAB TARDE': { short: 'TAR', icon: Sunset },
+    'FOLGA': { short: 'FOL', icon: Coffee },
+    'BANCO DE HORAS': { short: 'BHO', icon: HistoryIcon },
+    'FERIADO': { short: 'FER', icon: Star },
+    'PONTO FACULTATIVO': { short: 'PFA', icon: Clock },
+    'LICEN MÉDICA': { short: 'MED', icon: Stethoscope },
+    'FÉRIAS': { short: 'FÉR', icon: Palmtree },
+    'LICEN ESPECIAL': { short: 'ESP', icon: Star },
+    'NÃO REMUNERADA': { short: 'NRE', icon: MinusCircle },
+  };
+
+  return meta[label] || { short: label.substring(0, 3).toUpperCase(), icon: Star };
+};
 
 export default function Historico() {
   const navigate = useNavigate();
@@ -33,6 +62,7 @@ export default function Historico() {
   const [passError, setPassError] = useState(false);
 
   const [filters, setFilters] = useState({
+    profId: '',
     categoria: '',
     vinculo: '',
     linha_cuidado: '',
@@ -77,11 +107,11 @@ export default function Historico() {
   };
 
   const clearFilters = () => {
-    setFilters({ categoria: '', vinculo: '', linha_cuidado: '', mes: '', ano: '' });
+    setFilters({ profId: '', categoria: '', vinculo: '', linha_cuidado: '', mes: '', ano: '' });
     setSearchTerm('');
   };
 
-  const hasActiveFilters = filters.categoria || filters.vinculo || filters.linha_cuidado || filters.mes || filters.ano || searchTerm;
+  const hasActiveFilters = filters.profId || filters.categoria || filters.vinculo || filters.linha_cuidado || filters.mes || filters.ano || searchTerm;
 
   const mesesNomes = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
 
@@ -111,6 +141,7 @@ export default function Historico() {
     }
 
     // Filtros de categoria/vínculo/linha de cuidado
+    if (filters.profId && log.profId !== filters.profId) return false;
     if (filters.categoria && log.role !== filters.categoria) return false;
     if (filters.vinculo && log.vinculo !== filters.vinculo) return false;
     if (filters.linha_cuidado && log.linha_cuidado !== filters.linha_cuidado) return false;
@@ -173,6 +204,21 @@ export default function Historico() {
                 </div>
 
                 <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Profissional</label>
+                    <select 
+                      value={filters.profId}
+                      onChange={(e) => setFilters({...filters, profId: e.target.value})}
+                      className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                    >
+                      <option value="">Todos os profissionais</option>
+                      {profissionais
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map(p => <option key={p.id} value={p.id}>{p.name}</option>)
+                      }
+                    </select>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold text-outline uppercase mb-1.5 ml-1">Mês</label>
@@ -418,19 +464,23 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
           className="flex flex-wrap gap-2 w-full md:w-[23%] justify-start md:justify-center border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 md:px-4"
         >
           <div className="flex flex-wrap justify-center gap-2">
-            {shiftSummary.map(summary => (
-              <div 
-                key={summary.label} 
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105 ${getBadgeBg(summary.color)}`}
-                title={`${summary.count} dias de ${summary.label}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${getDotColor(summary.color)}`} />
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xs font-black text-on-surface">{summary.count}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-outline/80">{summary.label.substring(0, 3)}</span>
+            {shiftSummary.map(summary => {
+              const meta = getShiftSummaryMeta(summary.label);
+              const Icon = meta.icon;
+              return (
+                <div 
+                  key={summary.label} 
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all duration-300 hover:scale-105 ${getBadgeBg(summary.color)}`}
+                  title={`${summary.count} dias de ${summary.label}`}
+                >
+                  <Icon size={12} className={getDotColor(summary.color).replace('bg-', 'text-').split(' ')[0]} />
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xs font-black text-on-surface">{summary.count}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-outline/80">{meta.short}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
