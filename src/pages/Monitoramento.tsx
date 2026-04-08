@@ -108,12 +108,22 @@ export default function Monitoramento() {
           } 
         });
       }
+    } else if (prof.status === 'pendente') {
+      // Navega para a tela de lançamento para um novo registro
+      navigate('/lancamento', { 
+        state: { 
+          autoSelect: true, 
+          profId: prof.id, 
+          month: selectedMonth, 
+          year: selectedYear,
+          returnUrl: '/monitoramento'
+        } 
+      });
     }
   };
 
   return (
     <Layout activePath="/monitoramento">
-      {/* Page Header */}
       <style>{`
         @keyframes pulse-neon-green {
           0%, 100% { box-shadow: 0 0 5px #39FF14, 0 0 10px #39FF14; }
@@ -128,6 +138,9 @@ export default function Monitoramento() {
         }
         .animate-neon-yellow {
           animation: pulse-neon-yellow 2s infinite;
+        }
+        .pending-row-hover:hover {
+          background-color: rgba(255, 255, 0, 0.05);
         }
       `}</style>
       {/* Page Header */}
@@ -263,10 +276,10 @@ export default function Monitoramento() {
                   <tr 
                     key={prof.id} 
                     onClick={() => handleRowClick(prof)}
-                    className={`transition-all duration-300 ${
+                    className={`transition-all duration-300 cursor-pointer group/row ${
                       prof.status === 'realizado' 
-                        ? 'cursor-pointer hover:bg-primary/5 group/row' 
-                        : 'opacity-80'
+                        ? 'hover:bg-primary/5' 
+                        : 'pending-row-hover'
                     }`}
                   >
                     <td className="px-6 py-4 text-center">
@@ -275,17 +288,25 @@ export default function Monitoramento() {
                           <Zap size={22} strokeWidth={2.5} />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-xl bg-[#FFFF00]/10 text-[#FFFF00]/70 flex items-center justify-center mx-auto border border-[#FFFF00]/20 animate-neon-yellow" title="Pendente">
+                        <div className="w-10 h-10 rounded-xl bg-[#FFFF00]/10 text-[#FFFF00]/70 flex items-center justify-center mx-auto border border-[#FFFF00]/20 animate-neon-yellow group-hover/row:scale-110 transition-all duration-300" title="Pendente - Clique para lançar">
                           <Timer size={20} strokeWidth={2} />
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <p className={`text-sm font-extrabold transition-colors ${prof.status === 'realizado' ? 'text-on-surface group-hover/row:text-[#39FF14]' : 'text-on-surface/60'}`}>{prof.name}</p>
-                        {prof.created && prof.status === 'realizado' && (
+                        <p className={`text-sm font-extrabold transition-colors ${
+                          prof.status === 'realizado' 
+                            ? 'text-on-surface group-hover/row:text-[#39FF14]' 
+                            : 'text-on-surface group-hover/row:text-[#FFFF00]'
+                        }`}>{prof.name}</p>
+                        {prof.created && prof.status === 'realizado' ? (
                           <span className="text-[9px] font-bold text-outline/60 uppercase tracking-tighter">
                             Lançado em {new Date(prof.created).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-[#FFFF00]/40 uppercase tracking-tighter">
+                            Clique para iniciar o lançamento
                           </span>
                         )}
                       </div>
