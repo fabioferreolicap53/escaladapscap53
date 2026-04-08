@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Layout } from '../components/Layout';
-import { Plus, X, Loader2, Moon, Sun } from 'lucide-react';
+import { Plus, X, Loader2, Moon, Sun, ShieldCheck } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
+import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 
 export default function Configuracoes() {
   const { 
@@ -18,6 +19,31 @@ export default function Configuracoes() {
   const [isSubmittingLinha, setIsSubmittingLinha] = useState(false);
   const [isSubmittingCategoria, setIsSubmittingCategoria] = useState(false);
   const [isSubmittingVinculo, setIsSubmittingVinculo] = useState(false);
+
+  // Password confirmation states
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: 'remove_linha' | 'remove_categoria' | 'remove_vinculo', id: string, name: string } | null>(null);
+  const [passError, setPassError] = useState(false);
+
+  const handleConfirmPassword = async (password: string) => {
+    if (password === 'daps2022') {
+      if (pendingAction) {
+        if (pendingAction.type === 'remove_linha') await removeLinha(pendingAction.id);
+        if (pendingAction.type === 'remove_categoria') await removeCategoria(pendingAction.id);
+        if (pendingAction.type === 'remove_vinculo') await removeVinculo(pendingAction.id);
+      }
+      setIsPassModalOpen(false);
+      setPendingAction(null);
+    } else {
+      setPassError(true);
+    }
+  };
+
+  const requestRemove = (type: 'remove_linha' | 'remove_categoria' | 'remove_vinculo', id: string, name: string) => {
+    setPendingAction({ type, id, name });
+    setIsPassModalOpen(true);
+    setPassError(false);
+  };
 
   const handleAddLinha = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +77,14 @@ export default function Configuracoes() {
 
   return (
     <Layout activePath="/configuracoes">
+      <PasswordConfirmModal 
+        isOpen={isPassModalOpen}
+        onClose={() => setIsPassModalOpen(false)}
+        onConfirm={handleConfirmPassword}
+        error={passError}
+        title="Confirmar Exclusão"
+        description={`Você está prestes a remover "${pendingAction?.name}" das configurações base. Esta ação pode afetar registros existentes. Por favor, confirme sua senha.`}
+      />
       {/* Header */}
       <div className="flex justify-between items-end mb-10">
         <div className="space-y-1">
@@ -122,7 +156,7 @@ export default function Configuracoes() {
                     <div key={linha.id} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high/80 border border-outline-variant/10 rounded-lg group/tag hover:border-error/30 hover:bg-error/5 transition-all duration-300">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant group-hover/tag:text-error/80 transition-colors">{linha.name}</span>
                       <button 
-                        onClick={() => removeLinha(linha.id)}
+                        onClick={() => requestRemove('remove_linha', linha.id, linha.name)}
                         className="text-outline/40 hover:text-error transition-colors p-0.5"
                       >
                         <X size={14} />
@@ -177,7 +211,7 @@ export default function Configuracoes() {
                     <div key={cat.id} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high/80 border border-outline-variant/10 rounded-lg group/tag hover:border-error/30 hover:bg-error/5 transition-all duration-300">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant group-hover/tag:text-error/80 transition-colors">{cat.name}</span>
                       <button 
-                        onClick={() => removeCategoria(cat.id)}
+                        onClick={() => requestRemove('remove_categoria', cat.id, cat.name)}
                         className="text-outline/40 hover:text-error transition-colors p-0.5"
                       >
                         <X size={14} />
@@ -232,7 +266,7 @@ export default function Configuracoes() {
                     <div key={v.id} className="flex items-center gap-2 px-3 py-1.5 bg-surface-high/80 border border-outline-variant/10 rounded-lg group/tag hover:border-error/30 hover:bg-error/5 transition-all duration-300">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant group-hover/tag:text-error/80 transition-colors">{v.name}</span>
                       <button 
-                        onClick={() => removeVinculo(v.id)}
+                        onClick={() => requestRemove('remove_vinculo', v.id, v.name)}
                         className="text-outline/40 hover:text-error transition-colors p-0.5"
                       >
                         <X size={14} />

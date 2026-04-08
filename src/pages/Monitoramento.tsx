@@ -4,13 +4,16 @@ import { Layout } from '../components/Layout';
 import { useEscalas } from '../hooks/useEscalas';
 import { useProfissionais } from '../hooks/useProfissionais';
 import { useSettings } from '../contexts/SettingsContext';
+import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 import { 
-  CheckCircle2, 
-  XCircle, 
+  Zap, 
+  Clock, 
   CalendarDays,
   Search,
   User,
-  AlertCircle
+  AlertCircle,
+  FileCheck2,
+  Timer
 } from 'lucide-react';
 
 export default function Monitoramento() {
@@ -22,6 +25,11 @@ export default function Monitoramento() {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
+  // Password confirmation states
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: 'edit', data: any } | null>(null);
+  const [passError, setPassError] = useState(false);
 
   const mesesNomes = [
     "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", 
@@ -39,13 +47,14 @@ export default function Monitoramento() {
 
     return profissionais.map(prof => {
       // Verifica se o profissional tem escala para o mês/ano selecionado
-      const temEscala = escalas.some(
+      const escala = escalas.find(
         e => e.profId === prof.id && e.month === selectedMonth && e.year === selectedYear
       );
 
       return {
         ...prof,
-        status: temEscala ? 'realizado' : 'pendente'
+        status: escala ? 'realizado' : 'pendente',
+        created: escala?.created
       };
     }).filter(prof => {
       // Aplica busca por texto se houver
@@ -59,9 +68,13 @@ export default function Monitoramento() {
       }
       return true;
     }).sort((a, b) => {
-      // Ordena primeiro por status (pendentes primeiro, se preferir. Vamos botar pendentes primeiro)
+      // Ordena pelo momento do registro (mais recentes no topo)
+      // Profissionais sem registro (pendentes) ficam por último ou ordenados por nome
+      if (a.status === 'realizado' && b.status === 'realizado') {
+        return new Date(b.created || 0).getTime() - new Date(a.created || 0).getTime();
+      }
       if (a.status !== b.status) {
-        return a.status === 'pendente' ? -1 : 1;
+        return a.status === 'realizado' ? -1 : 1;
       }
       return a.name.localeCompare(b.name);
     });
@@ -90,7 +103,8 @@ export default function Monitoramento() {
             profId: prof.id, 
             month: selectedMonth, 
             year: selectedYear,
-            returnUrl: '/monitoramento'
+            returnUrl: '/monitoramento',
+            readOnly: true // Permite apenas visualização inicial
           } 
         });
       }
@@ -99,13 +113,21 @@ export default function Monitoramento() {
 
   return (
     <Layout activePath="/monitoramento">
+      {/* Page Header */}
       <style>{`
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(0.95); }
+        @keyframes pulse-neon-green {
+          0%, 100% { box-shadow: 0 0 5px #39FF14, 0 0 10px #39FF14; }
+          50% { box-shadow: 0 0 15px #39FF14, 0 0 25px #39FF14; }
         }
-        .animate-pulse-slow {
-          animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        @keyframes pulse-neon-yellow {
+          0%, 100% { box-shadow: 0 0 5px #FFFF00, 0 0 10px #FFFF00; }
+          50% { box-shadow: 0 0 15px #FFFF00, 0 0 25px #FFFF00; }
+        }
+        .animate-neon-green {
+          animation: pulse-neon-green 2s infinite;
+        }
+        .animate-neon-yellow {
+          animation: pulse-neon-yellow 2s infinite;
         }
       `}</style>
       {/* Page Header */}
@@ -162,11 +184,11 @@ export default function Monitoramento() {
 
         {/* Card 2: Lançados */}
         <div className="bg-surface-low rounded-2xl p-6 border border-outline-variant/10 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#39FF14]/5 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110" />
           <div className="flex justify-between items-start mb-4 relative z-10">
             <h3 className="text-[10px] font-black text-outline uppercase tracking-[0.2em]">Escalas Lançadas</h3>
-            <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
-              <CheckCircle2 size={20} />
+            <div className="p-2 bg-[#39FF14]/10 text-[#39FF14] rounded-lg shadow-[0_0_15px_rgba(57,255,20,0.2)]">
+              <Zap size={20} className="animate-pulse" />
             </div>
           </div>
           <div className="flex items-end gap-2 relative z-10">
@@ -177,11 +199,11 @@ export default function Monitoramento() {
 
         {/* Card 3: Pendentes */}
         <div className="bg-surface-low rounded-2xl p-6 border border-outline-variant/10 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-error/5 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFFF00]/5 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110" />
           <div className="flex justify-between items-start mb-4 relative z-10">
             <h3 className="text-[10px] font-black text-outline uppercase tracking-[0.2em]">Pendências</h3>
-            <div className="p-2 bg-error/10 text-error rounded-lg">
-              <AlertCircle size={20} />
+            <div className="p-2 bg-[#FFFF00]/10 text-[#FFFF00] rounded-lg shadow-[0_0_15px_rgba(255,255,0,0.2)]">
+              <Timer size={20} className="animate-pulse" />
             </div>
           </div>
           <div className="flex items-end gap-2 relative z-10">
@@ -199,12 +221,12 @@ export default function Monitoramento() {
             <p className="text-xs text-outline font-medium mt-1">Status de envio da escala de {mesesNomes[selectedMonth]} de {selectedYear}</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-high rounded-lg text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-secondary"></span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-high rounded-lg text-xs font-bold text-[#39FF14] shadow-[0_0_10px_rgba(57,255,20,0.2)]">
+              <Zap size={14} />
               Lançado
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-high rounded-lg text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-error"></span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-high rounded-lg text-xs font-bold text-[#FFFF00] shadow-[0_0_10px_rgba(255,255,0,0.2)]">
+              <Timer size={14} />
               Pendente
             </div>
           </div>
@@ -249,17 +271,24 @@ export default function Monitoramento() {
                   >
                     <td className="px-6 py-4 text-center">
                       {prof.status === 'realizado' ? (
-                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-on-surface flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(16,185,129,0.2)] border border-emerald-500/30 animate-pulse-slow group-hover/row:scale-110 transition-transform" title="Escala Lançada - Clique para ver">
-                          <CheckCircle2 size={20} strokeWidth={3} />
+                        <div className="w-10 h-10 rounded-xl bg-[#39FF14]/20 text-[#39FF14] flex items-center justify-center mx-auto border border-[#39FF14]/40 animate-neon-green group-hover/row:scale-110 transition-all duration-300" title="Escala Lançada - Clique para ver">
+                          <Zap size={22} strokeWidth={2.5} />
                         </div>
                       ) : (
-                        <div className="w-9 h-9 rounded-xl bg-error/10 text-on-surface/60 flex items-center justify-center mx-auto border border-error/10" title="Pendente">
-                          <XCircle size={18} strokeWidth={2} />
+                        <div className="w-10 h-10 rounded-xl bg-[#FFFF00]/10 text-[#FFFF00]/70 flex items-center justify-center mx-auto border border-[#FFFF00]/20 animate-neon-yellow" title="Pendente">
+                          <Timer size={20} strokeWidth={2} />
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <p className={`text-sm font-extrabold transition-colors ${prof.status === 'realizado' ? 'text-on-surface group-hover/row:text-primary' : 'text-on-surface/60'}`}>{prof.name}</p>
+                      <div className="flex flex-col">
+                        <p className={`text-sm font-extrabold transition-colors ${prof.status === 'realizado' ? 'text-on-surface group-hover/row:text-[#39FF14]' : 'text-on-surface/60'}`}>{prof.name}</p>
+                        {prof.created && prof.status === 'realizado' && (
+                          <span className="text-[9px] font-bold text-outline/60 uppercase tracking-tighter">
+                            Lançado em {new Date(prof.created).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[10px] font-bold text-on-surface/80 uppercase tracking-[0.2em]">{prof.linha_cuidado || "---"}</span>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, FormEvent, ChangeEvent } from 'react';
 import { Layout } from '../components/Layout';
 import { useSettings } from '../contexts/SettingsContext';
+import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 import { 
   Filter, 
   Download, 
@@ -32,6 +33,12 @@ export default function Profissionais() {
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
+
+  // Password confirmation states
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: 'edit' | 'delete', data: any } | null>(null);
+  const [passError, setPassError] = useState(false);
+
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({
     key: 'name',
     direction: 'asc'
@@ -42,6 +49,7 @@ export default function Profissionais() {
     linha_cuidado: ''
   });
   const [editingProfissionalId, setEditingProfissionalId] = useState<string | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [novoProfissional, setNovoProfissional] = useState({
     name: '',
     role: '',
@@ -89,6 +97,7 @@ export default function Profissionais() {
 
   const fecharModal = () => {
     setIsModalOpen(false);
+    setIsReadOnly(false);
     setIsLinhaDropdownOpen(false);
     setSearchLinha('');
     setEditingProfissionalId(null);
@@ -115,7 +124,7 @@ export default function Profissionais() {
     l.name.toLowerCase().includes(searchLinha.toLowerCase())
   );
 
-  const handleEditClick = (prof: any) => {
+  const handleRowClick = (prof: any) => {
     setEditingProfissionalId(prof.id);
     setNovoProfissional({
       name: prof.name,
@@ -123,28 +132,50 @@ export default function Profissionais() {
       vinculo: prof.vinculo || '',
       linha_cuidado: prof.linha_cuidado || ''
     });
+    setIsReadOnly(true); // Modo visualização por padrão no clique da linha
     setIsModalOpen(true);
   };
 
-  const handleExcluirProfissional = async (id: string) => {
-    // Se ainda não confirmou a primeira vez (passo 0), avança para o passo 1
-    if (confirmacaoExclusaoPasso === 0) {
-      setConfirmacaoExclusaoPasso(1);
-      return;
-    }
+  const handleEditClick = (prof: any) => {
+    setPendingAction({ type: 'edit', data: prof });
+    setIsPassModalOpen(true);
+    setPassError(false);
+  };
 
-    // Se já confirmou a primeira vez (passo 1), realiza a exclusão
-    const profExcluido = profissionais.find(p => p.id === id);
-    if (profExcluido) {
-      await deleteProfissional(id);
-      setShowExcluirConfirm(null);
-      setConfirmacaoExclusaoPasso(0); // Reseta o passo
-      setShowSuccessAlert(`Profissional ${profExcluido.name} excluído com sucesso!`);
-      
-      // Esconde o alerta de sucesso após 3 segundos
-      setTimeout(() => {
-        setShowSuccessAlert(null);
-      }, 3000);
+  const handleExcluirProfissional = async (id: string) => {
+    setPendingAction({ type: 'delete', data: id });
+    setIsPassModalOpen(true);
+    setPassError(false);
+  };
+
+  const handleConfirmPassword = async (password: string) => {
+    if (password === 'daps2022') {
+      if (pendingAction?.type === 'edit') {
+        const prof = pendingAction.data;
+        setEditingProfissionalId(prof.id);
+        setNovoProfissional({
+          name: prof.name,
+          role: prof.role,
+          vinculo: prof.vinculo || '',
+          linha_cuidado: prof.linha_cuidado || ''
+        });
+        setIsReadOnly(false); // Libera edição
+        setIsModalOpen(true);
+      } else if (pendingAction?.type === 'delete') {
+        const id = pendingAction.data;
+        const profExcluido = profissionais.find(p => p.id === id);
+        if (profExcluido) {
+          await deleteProfissional(id);
+          setShowExcluirConfirm(null);
+          setConfirmacaoExclusaoPasso(0);
+          setShowSuccessAlert(`Profissional ${profExcluido.name} excluído com sucesso!`);
+          setTimeout(() => setShowSuccessAlert(null), 3000);
+        }
+      }
+      setIsPassModalOpen(false);
+      setPendingAction(null);
+    } else {
+      setPassError(true);
     }
   };
 
@@ -191,6 +222,18 @@ export default function Profissionais() {
 
   return (
     <Layout activePath="/profissionais">
+      <PasswordConfirmModal 
+        isOpen={isPassModalOpen}
+        onClose={() => setIsPassModalOpen(false)}
+        onConfirm={handleConfirmPassword}
+        error={passError}
+        title={pendingAction?.type === 'delete' ? "Confirmar Exclusão" : "Confirmar Edição"}
+        description={
+          pendingAction?.type === 'delete' 
+            ? "Você está prestes a excluir permanentemente este profissional. Por favor, confirme sua senha."
+            : "Para editar os dados deste profissional, por favor confirme sua senha de acesso."
+        }
+      />
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 md:gap-8 mb-10">
         <div className="space-y-1">
@@ -375,8 +418,9 @@ export default function Profissionais() {
                   <TableRow 
                     key={prof.id}
                     prof={prof}
+                    onRowClick={() => handleRowClick(prof)}
                     onEdit={() => handleEditClick(prof)}
-                    onDelete={() => setShowExcluirConfirm(prof.id)}
+                    onDelete={() => handleExcluirProfissional(prof.id)}
                   />
                 ))
               )}
@@ -402,10 +446,10 @@ export default function Profissionais() {
             <div className="flex justify-between items-center p-6 border-b border-outline-variant/10">
               <div>
                 <h3 className="text-xl font-bold text-on-surface">
-                  {editingProfissionalId ? 'Editar Profissional' : 'Novo Profissional'}
+                  {isReadOnly ? 'Dados do Profissional' : (editingProfissionalId ? 'Editar Profissional' : 'Novo Profissional')}
                 </h3>
                 <p className="text-xs text-outline mt-1">
-                  {editingProfissionalId ? 'Atualize os dados do membro da equipe' : 'Preencha os dados do novo membro da equipe'}
+                  {isReadOnly ? 'Visualizando informações do membro da equipe' : (editingProfissionalId ? 'Atualize os dados do membro da equipe' : 'Preencha os dados do novo membro da equipe')}
                 </p>
               </div>
               <button 
@@ -417,112 +461,118 @@ export default function Profissionais() {
             </div>
             
             <form onSubmit={handleSalvarProfissional} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Nome Completo *</label>
-                <input 
-                  type="text" 
-                  required
-                  value={novoProfissional.name}
-                  onChange={(e) => setNovoProfissional({...novoProfissional, name: e.target.value})}
-                  className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
-                  placeholder="Ex: João Silva"
-                />
-              </div>
-              
-              <div className="space-y-4">
+              <div className={isReadOnly ? 'opacity-60 grayscale pointer-events-none' : ''}>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Categoria Profissional *</label>
-                  <select 
+                  <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Nome Completo *</label>
+                  <input 
+                    type="text" 
                     required
-                    value={novoProfissional.role}
-                    onChange={(e) => setNovoProfissional({...novoProfissional, role: e.target.value})}
+                    disabled={isReadOnly}
+                    value={novoProfissional.name}
+                    onChange={(e) => setNovoProfissional({...novoProfissional, name: e.target.value})}
+                    className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    placeholder="Ex: João Silva"
+                  />
+                </div>
+                
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Categoria Profissional *</label>
+                    <select 
+                      required
+                      disabled={isReadOnly}
+                      value={novoProfissional.role}
+                      onChange={(e) => setNovoProfissional({...novoProfissional, role: e.target.value})}
+                      className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
+                    >
+                      <option value="">Selecione uma categoria...</option>
+                      {categorias.map((cat) => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Tipo de Vínculo</label>
+                  <select 
+                    disabled={isReadOnly}
+                    value={novoProfissional.vinculo}
+                    onChange={(e) => setNovoProfissional({...novoProfissional, vinculo: e.target.value})}
                     className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
                   >
-                    <option value="">Selecione uma categoria...</option>
-                    {categorias.map((cat) => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    <option value="">Selecione...</option>
+                    {vinculos.map(v => (
+                      <option key={v.id} value={v.name}>{v.name}</option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Tipo de Vínculo</label>
-                <select 
-                  value={novoProfissional.vinculo}
-                  onChange={(e) => setNovoProfissional({...novoProfissional, vinculo: e.target.value})}
-                  className="w-full bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-none"
-                >
-                  <option value="">Selecione...</option>
-                  {vinculos.map(v => (
-                    <option key={v.id} value={v.name}>{v.name}</option>
-                  ))}
-                </select>
-              </div>
+                <div className="mt-4">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Linha de Cuidado</label>
+                  <div className="relative" ref={linhaDropdownRef}>
+                    <button 
+                      type="button"
+                      disabled={isReadOnly}
+                      onClick={() => setIsLinhaDropdownOpen(!isLinhaDropdownOpen)}
+                      className={`w-full flex items-center justify-between bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all ${isLinhaDropdownOpen ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                    >
+                      <span className={`truncate ${novoProfissional.linha_cuidado ? 'text-on-surface' : 'text-outline/60'}`}>
+                        {novoProfissional.linha_cuidado 
+                          ? (novoProfissional.linha_cuidado.split(', ').length > 2 
+                              ? `${novoProfissional.linha_cuidado.split(', ').length} selecionadas` 
+                              : novoProfissional.linha_cuidado)
+                          : "Selecione uma ou mais..."}
+                      </span>
+                      <ChevronLeft 
+                        size={16} 
+                        className={`text-outline transition-transform duration-300 ${isLinhaDropdownOpen ? 'rotate-90' : '-rotate-90'}`} 
+                      />
+                    </button>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-outline mb-2">Linha de Cuidado</label>
-                <div className="relative" ref={linhaDropdownRef}>
-                  <button 
-                    type="button"
-                    onClick={() => setIsLinhaDropdownOpen(!isLinhaDropdownOpen)}
-                    className={`w-full flex items-center justify-between bg-surface-low border border-outline-variant/20 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all ${isLinhaDropdownOpen ? 'border-primary ring-2 ring-primary/20' : ''}`}
-                  >
-                    <span className={`truncate ${novoProfissional.linha_cuidado ? 'text-on-surface' : 'text-outline/60'}`}>
-                      {novoProfissional.linha_cuidado 
-                        ? (novoProfissional.linha_cuidado.split(', ').length > 2 
-                            ? `${novoProfissional.linha_cuidado.split(', ').length} selecionadas` 
-                            : novoProfissional.linha_cuidado)
-                        : "Selecione uma ou mais..."}
-                    </span>
-                    <ChevronLeft 
-                      size={16} 
-                      className={`text-outline transition-transform duration-300 ${isLinhaDropdownOpen ? 'rotate-90' : '-rotate-90'}`} 
-                    />
-                  </button>
-
-                  {isLinhaDropdownOpen && (
-                    <div className="absolute bottom-full left-0 w-full mb-2 bg-surface border border-outline-variant/20 rounded-xl shadow-2xl z-[70] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                      <div className="p-2 border-b border-outline-variant/10">
-                        <input
-                          type="text"
-                          placeholder="Buscar linha..."
-                          value={searchLinha}
-                          onChange={(e) => setSearchLinha(e.target.value)}
-                          className="w-full bg-surface-low border border-outline-variant/10 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
-                          autoFocus
-                        />
+                    {isLinhaDropdownOpen && (
+                      <div className="absolute bottom-full left-0 w-full mb-2 bg-surface border border-outline-variant/20 rounded-xl shadow-2xl z-[70] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="p-2 border-b border-outline-variant/10">
+                          <input
+                            type="text"
+                            placeholder="Buscar linha..."
+                            value={searchLinha}
+                            onChange={(e) => setSearchLinha(e.target.value)}
+                            className="w-full bg-surface-low border border-outline-variant/10 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
+                            autoFocus
+                          />
+                        </div>
+                        <div className="max-h-[180px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+                          {filteredLinhasCuidado.length > 0 ? (
+                            filteredLinhasCuidado.map(l => {
+                              const isSelected = novoProfissional.linha_cuidado.split(', ').includes(l.name);
+                              return (
+                                <button
+                                  key={l.id}
+                                  type="button"
+                                  onClick={() => toggleLinhaCuidado(l.name)}
+                                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left ${
+                                    isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-surface-high text-on-surface'
+                                  }`}
+                                >
+                                  <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
+                                    isSelected ? 'bg-primary border-primary' : 'border-outline-variant/30'
+                                  }`}>
+                                    {isSelected && <CheckCircle2 size={12} className="text-surface" />}
+                                  </div>
+                                  <span className={`text-xs font-bold ${isSelected ? 'font-black' : 'font-medium'}`}>{l.name}</span>
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="py-4 text-center">
+                              <p className="text-[10px] text-outline uppercase font-bold">Nenhuma linha encontrada</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="max-h-[180px] overflow-y-auto custom-scrollbar p-2 space-y-1">
-                        {filteredLinhasCuidado.length > 0 ? (
-                          filteredLinhasCuidado.map(l => {
-                            const isSelected = novoProfissional.linha_cuidado.split(', ').includes(l.name);
-                            return (
-                              <button
-                                key={l.id}
-                                type="button"
-                                onClick={() => toggleLinhaCuidado(l.name)}
-                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-left ${
-                                  isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-surface-high text-on-surface'
-                                }`}
-                              >
-                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-                                  isSelected ? 'bg-primary border-primary' : 'border-outline-variant/30'
-                                }`}>
-                                  {isSelected && <CheckCircle2 size={12} className="text-surface" />}
-                                </div>
-                                <span className={`text-xs font-bold ${isSelected ? 'font-black' : 'font-medium'}`}>{l.name}</span>
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <div className="py-4 text-center">
-                            <p className="text-[10px] text-outline uppercase font-bold">Nenhuma linha encontrada</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -532,14 +582,29 @@ export default function Profissionais() {
                   onClick={fecharModal}
                   className="px-5 py-2.5 rounded-lg text-sm font-bold text-outline hover:bg-surface-high transition-colors"
                 >
-                  Cancelar
+                  {isReadOnly ? 'Fechar' : 'Cancelar'}
                 </button>
-                <button 
-                  type="submit"
-                  className="px-5 py-2.5 bg-primary text-surface rounded-lg text-sm font-bold hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95"
-                >
-                  {editingProfissionalId ? 'Salvar Alterações' : 'Salvar Profissional'}
-                </button>
+                {isReadOnly ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setPendingAction({ type: 'edit', data: profissionais.find(p => p.id === editingProfissionalId) });
+                      setIsPassModalOpen(true);
+                      setPassError(false);
+                    }}
+                    className="px-5 py-2.5 bg-amber-500 text-surface rounded-lg text-sm font-bold hover:bg-amber-600 shadow-lg shadow-amber-500/20 transition-all active:scale-95 flex items-center gap-2"
+                  >
+                    <CheckCircle2 size={18} />
+                    Habilitar Edição
+                  </button>
+                ) : (
+                  <button 
+                    type="submit"
+                    className="px-5 py-2.5 bg-primary text-surface rounded-lg text-sm font-bold hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                  >
+                    {editingProfissionalId ? 'Salvar Alterações' : 'Salvar Profissional'}
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -563,54 +628,15 @@ export default function Profissionais() {
           </div>
         </div>
       )}
-
-      {/* Confirmação de Exclusão */}
-      {showExcluirConfirm && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/90 backdrop-blur-md p-4">
-          <div className="bg-surface rounded-2xl w-full max-w-sm border border-error/20 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center text-error mx-auto mb-6">
-                <AlertTriangle size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-on-surface mb-2">
-                {confirmacaoExclusaoPasso === 0 ? 'Confirmar Exclusão?' : 'Tem Certeza Absoluta?'}
-              </h3>
-              <p className="text-sm text-outline leading-relaxed">
-                {confirmacaoExclusaoPasso === 0 
-                  ? <>Você está prestes a excluir <strong>{profissionais.find(p => p.id === showExcluirConfirm)?.name}</strong>. Esta ação não poderá ser desfeita.</>
-                  : <><strong>Esta é a segunda e última confirmação.</strong> Os dados serão removidos permanentemente.</>
-                }
-              </p>
-            </div>
-            <div className="flex border-t border-outline-variant/10">
-              <button 
-                onClick={() => {
-                  setShowExcluirConfirm(null);
-                  setConfirmacaoExclusaoPasso(0);
-                }}
-                className="flex-1 px-6 py-4 text-sm font-bold text-outline hover:bg-surface-high transition-colors border-r border-outline-variant/10"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={() => handleExcluirProfissional(showExcluirConfirm)}
-                className={`flex-1 px-6 py-4 text-sm font-bold transition-colors ${confirmacaoExclusaoPasso === 0 ? 'text-error hover:bg-error/5' : 'bg-error text-surface hover:brightness-110'}`}
-              >
-                {confirmacaoExclusaoPasso === 0 ? 'Sim, Excluir' : 'Confirmar Exclusão'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }
 
-function TableRow({ prof, onEdit, onDelete }: { prof: any, onEdit: () => void, onDelete: () => void }) {
+function TableRow({ prof, onRowClick, onEdit, onDelete }: { prof: any, onRowClick: () => void, onEdit: () => void, onDelete: () => void }) {
   const { name, id, role, vinculo, linha_cuidado } = prof;
   return (
     <tr 
-      onClick={onEdit}
+      onClick={onRowClick}
       className="group hover:bg-surface-high transition-colors cursor-pointer"
     >
       <td className="px-6 py-6">

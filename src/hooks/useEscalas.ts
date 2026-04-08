@@ -14,6 +14,7 @@ export interface Escala {
   vinculo: string;
   time: string;
   shifts: string; // Adicionado campo para guardar o array de turnos em JSON
+  created?: string;
 }
 
 const fetcher = async () => {
@@ -21,7 +22,7 @@ const fetcher = async () => {
   try {
     const records = await pb.collection(collectionName).getFullList({
       sort: '-created',
-      fields: 'id,profId,name,avatar,role,month,year,status,statusColor,vinculo,time,shifts'
+      fields: 'id,profId,name,avatar,role,month,year,status,statusColor,vinculo,time,shifts,created'
     });
     
     return records.map(record => ({
@@ -36,7 +37,8 @@ const fetcher = async () => {
       statusColor: record.statusColor,
       vinculo: record.vinculo,
       time: record.time,
-      shifts: record.shifts || '[]'
+      shifts: record.shifts || '[]',
+      created: record.created
     }));
   } catch (error) {
     console.error("Erro ao buscar escalas no PocketBase:", error);

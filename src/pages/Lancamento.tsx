@@ -4,6 +4,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfissionais } from '../hooks/useProfissionais';
 import { useEscalas } from '../hooks/useEscalas';
+import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 import { 
   Download, 
   AlertTriangle,
@@ -55,6 +56,13 @@ export default function Lancamento() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   const [returnUrl, setReturnUrl] = useState<string>('/escala');
+  
+  // Password confirmation states
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+  const [passError, setPassError] = useState(false);
+  
+  // Modo de visualização / edição
+  const [isReadOnly, setIsReadOnly] = useState(false);
   
   // Controle do mês
   const meses = [
@@ -146,6 +154,18 @@ export default function Lancamento() {
       e.year === anoAtual
     );
 
+    // Se for edição, pede senha
+    if (escalaExistente) {
+      setIsPassModalOpen(true);
+      setPassError(false);
+      return;
+    }
+
+    // Se for novo, salva direto
+    performSave(null);
+  };
+
+  const performSave = async (escalaId: string | null) => {
     setIsSaving(true);
     setSaveError(null);
     
@@ -166,9 +186,9 @@ export default function Lancamento() {
           shifts: JSON.stringify(professionalShifts) // Salva os turnos pintados como JSON string
         };
 
-        if (escalaExistente) {
+        if (escalaId) {
           // Se já existe, atualiza
-          await updateEscala(escalaExistente.id, payload);
+          await updateEscala(escalaId, payload);
           setShowSuccessAlert("Escala atualizada com sucesso!");
         } else {
           // Se não existe, cria nova
@@ -190,10 +210,30 @@ export default function Lancamento() {
     setIsSaving(false);
   };
 
+  const handleConfirmPassword = (password: string) => {
+    if (password === 'daps2022') {
+      if (isReadOnly) {
+        setIsReadOnly(false);
+      } else {
+        const escalaExistente = escalas.find(e => 
+          e.profId === selectedProfessional && 
+          e.month === mesAtual && 
+          e.year === anoAtual
+        );
+        if (escalaExistente) {
+          performSave(escalaExistente.id);
+        }
+      }
+      setIsPassModalOpen(false);
+    } else {
+      setPassError(true);
+    }
+  };
+
   // Efeito para carregar dados do histórico (se houver)
   useEffect(() => {
     if (location.state && location.state.autoSelect) {
-      const { profId, month, year, returnUrl: passedReturnUrl } = location.state;
+      const { profId, month, year, returnUrl: passedReturnUrl, readOnly } = location.state;
       if (profId) setSelectedProfessional(profId);
       
       if (month !== undefined) {
@@ -205,6 +245,10 @@ export default function Lancamento() {
       
       if (passedReturnUrl) {
         setReturnUrl(passedReturnUrl);
+      }
+
+      if (readOnly !== undefined) {
+        setIsReadOnly(readOnly);
       }
       
       // Limpa o estado no history do browser para não re-selecionar ao dar reload
@@ -245,7 +289,7 @@ export default function Lancamento() {
   }, [selectedProfessional, mesAtual, anoAtual, escalas]);
 
   const applyShift = (index: number) => {
-    if (!activeShiftType || professionalShifts[index] === 'weekend') return;
+    if (!activeShiftType || professionalShifts[index] === 'weekend' || isReadOnly) return;
     
     setProfessionalShifts(prev => {
       const newShifts = [...prev];
@@ -266,13 +310,13 @@ export default function Lancamento() {
   };
 
   const handleMouseDown = (index: number) => {
-    if (!activeShiftType) return;
+    if (!activeShiftType || isReadOnly) return;
     setIsPainting(true);
     applyShift(index);
   };
 
   const handleMouseEnter = (index: number) => {
-    if (isPainting && activeShiftType && professionalShifts[index] !== 'weekend') {
+    if (isPainting && activeShiftType && professionalShifts[index] !== 'weekend' && !isReadOnly) {
       setProfessionalShifts(prev => {
         const newShifts = [...prev];
         // Durante o arraste (drag), apenas pinta. Não apaga para evitar comportamento confuso.
@@ -332,6 +376,18 @@ export default function Lancamento() {
 
   return (
     <Layout activePath="/escala">
+      <PasswordConfirmModal 
+        isOpen={isPassModalOpen}
+        onClose={() => setIsPassModalOpen(false)}
+        onConfirm={handleConfirmPassword}
+        error={passError}
+        title={isReadOnly ? "Habilitar Edição" : "Confirmar Edição"}
+        description={
+          isReadOnly 
+            ? "Esta escala está em modo de visualização. Para realizar alterações, por favor confirme sua senha de acesso."
+            : "Esta escala já foi lançada anteriormente. Para salvar as novas alterações, por favor confirme sua senha de acesso."
+        }
+      />
       {/* Conductor Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
         <div className="max-w-2xl">
@@ -351,12 +407,14 @@ export default function Lancamento() {
             Cancelar
           </button>
           <button 
-            onClick={handleSave}
-            disabled={!selectedProfessional || isSaving}
+            onClick={isReadOnly ? () => setIsPassModalOpen(true) : handleSave}
+            disabled={(!selectedProfessional && !isReadOnly) || isSaving}
             className={`px-8 py-3.5 text-surface text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 w-full sm:w-auto ${
-              !selectedProfessional || isSaving
+              (!selectedProfessional && !isReadOnly) || isSaving
                 ? 'bg-outline/20 text-outline/50 cursor-not-allowed shadow-none'
-                : 'bg-gradient-to-br from-primary to-primary-container shadow-primary/20 hover:brightness-110'
+                : isReadOnly 
+                  ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20' 
+                  : 'bg-gradient-to-br from-primary to-primary-container shadow-primary/20 hover:brightness-110'
             }`}
           >
             {isSaving ? (
@@ -364,6 +422,11 @@ export default function Lancamento() {
                 <div className="w-4 h-4 border-2 border-surface/30 border-t-surface rounded-full animate-spin" />
                 Salvando...
               </span>
+            ) : isReadOnly ? (
+              <>
+                <CheckCircle2 size={18} />
+                Habilitar Edição
+              </>
             ) : (
               <>
                 <Download size={18} />
@@ -498,7 +561,7 @@ export default function Lancamento() {
       </section>
 
       {/* Shift Palette (Action Bar) - Modern Redesign */}
-      <section className={`mb-8 p-6 bg-surface-low/50 backdrop-blur-sm rounded-2xl border border-outline-variant/10 transition-all duration-500 ${!selectedProfessional ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
+      <section className={`mb-8 p-6 bg-surface-low/50 backdrop-blur-sm rounded-2xl border border-outline-variant/10 transition-all duration-500 ${(!selectedProfessional || isReadOnly) ? 'opacity-50 grayscale pointer-events-none' : ''} ${isReadOnly ? 'translate-y-2' : ''}`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary mb-1">Seletor de Lançamento</h3>
@@ -612,6 +675,7 @@ export default function Lancamento() {
                             shift={cell.shift}
                             onMouseDown={() => handleMouseDown(cell.index)}
                             onMouseEnter={() => handleMouseEnter(cell.index)}
+                            isReadOnly={isReadOnly}
                           />
                         )}
                       </div>
@@ -649,7 +713,7 @@ export default function Lancamento() {
   );
 }
 
-function ShiftCell({ shift, onMouseDown, onMouseEnter }: { shift: any, onMouseDown?: () => void, onMouseEnter?: () => void }) {
+function ShiftCell({ shift, onMouseDown, onMouseEnter, isReadOnly }: { shift: any, onMouseDown?: () => void, onMouseEnter?: () => void, isReadOnly: boolean }) {
   if (shift === 'weekend') {
     return (
       <div className="flex-grow bg-surface-high/30 border-r border-outline-variant/5 last:border-r-0" />
@@ -673,7 +737,7 @@ function ShiftCell({ shift, onMouseDown, onMouseEnter }: { shift: any, onMouseDo
     <div 
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
-      className={`flex-grow border-r border-outline-variant/10 last:border-r-0 transition-all duration-200 cursor-pointer relative group/cell min-h-[100px] ${shift ? getColorClasses(shift.color) : 'hover:bg-primary/5'}`}
+      className={`flex-grow border-r border-outline-variant/10 last:border-r-0 transition-all duration-200 relative group/cell min-h-[100px] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'} ${shift ? getColorClasses(shift.color) : isReadOnly ? '' : 'hover:bg-primary/5'}`}
     >
       {shift && (
         <div className="absolute inset-1.5 flex flex-col items-center justify-center text-center p-1 rounded-xl border border-current/20 backdrop-blur-[2px] animate-in fade-in zoom-in-95 duration-300">
@@ -683,7 +747,7 @@ function ShiftCell({ shift, onMouseDown, onMouseEnter }: { shift: any, onMouseDo
           <div className="mt-1 w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor]" />
         </div>
       )}
-      {!shift && (
+      {!shift && !isReadOnly && (
         <div className="absolute inset-0 opacity-0 group-hover/cell:opacity-100 flex items-center justify-center transition-opacity">
           <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
             <Plus size={14} className="text-primary" />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Layout } from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
+import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
 import { 
   Filter, 
   Download, 
@@ -25,6 +26,12 @@ export default function Historico() {
   const [showFilters, setShowFilters] = useState(false);
   const [showExcluirConfirm, setShowExcluirConfirm] = useState<string | null>(null);
   const [confirmacaoExclusaoPasso, setConfirmacaoExclusaoPasso] = useState<number>(0);
+  
+  // Password confirmation states
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: 'edit' | 'delete', data: any } | null>(null);
+  const [passError, setPassError] = useState(false);
+
   const [filters, setFilters] = useState({
     categoria: '',
     vinculo: '',
@@ -34,14 +41,39 @@ export default function Historico() {
   });
 
   const handleExcluirEscala = async (id: string) => {
-    if (confirmacaoExclusaoPasso === 0) {
-      setConfirmacaoExclusaoPasso(1);
-      return;
-    }
+    setPendingAction({ type: 'delete', data: id });
+    setIsPassModalOpen(true);
+    setPassError(false);
+  };
 
-    await deleteEscala(id);
-    setShowExcluirConfirm(null);
-    setConfirmacaoExclusaoPasso(0);
+  const handleEditarEscala = (data: { profId: string, month: number, year: number }) => {
+    setPendingAction({ type: 'edit', data });
+    setIsPassModalOpen(true);
+    setPassError(false);
+  };
+
+  const handleConfirmPassword = async (password: string) => {
+    if (password === 'daps2022') {
+      if (pendingAction?.type === 'delete') {
+        await deleteEscala(pendingAction.data);
+      } else if (pendingAction?.type === 'edit') {
+        const { profId, month, year } = pendingAction.data;
+        navigate('/lancamento', { 
+          state: { 
+            profId, 
+            month,
+            year,
+            autoSelect: true,
+            returnUrl: '/escala',
+            readOnly: false // Força modo edição
+          } 
+        });
+      }
+      setIsPassModalOpen(false);
+      setPendingAction(null);
+    } else {
+      setPassError(true);
+    }
   };
 
   const clearFilters = () => {
@@ -92,6 +124,18 @@ export default function Historico() {
 
   return (
     <Layout activePath="/escala">
+      <PasswordConfirmModal 
+        isOpen={isPassModalOpen}
+        onClose={() => setIsPassModalOpen(false)}
+        onConfirm={handleConfirmPassword}
+        error={passError}
+        title={pendingAction?.type === 'delete' ? "Confirmar Exclusão" : "Confirmar Edição"}
+        description={
+          pendingAction?.type === 'delete' 
+            ? "Você está prestes a excluir permanentemente este registro de escala. Por favor, confirme sua senha."
+            : "Este registro já foi lançado. Para alterá-lo, por favor confirme sua senha de acesso."
+        }
+      />
       {/* Hero Header Section */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 md:gap-8 mb-8">
         <div className="max-w-2xl">
@@ -227,10 +271,8 @@ export default function Historico() {
             <LogEntry 
               key={log.id} 
               {...log} 
-              onDelete={(id: string) => {
-                setShowExcluirConfirm(id);
-                setConfirmacaoExclusaoPasso(0);
-              }}
+              onDelete={(id: string) => handleExcluirEscala(id)}
+              onEdit={(data: any) => handleEditarEscala(data)}
             />
           ))
         ) : (
@@ -252,61 +294,30 @@ export default function Historico() {
         )}
       </div>
 
-      {/* Confirmação de Exclusão de Escala */}
-      {showExcluirConfirm && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-background/90 backdrop-blur-md p-4">
-          <div className="bg-surface rounded-2xl w-full max-w-sm border border-error/20 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center text-error mx-auto mb-6">
-                <AlertTriangle size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-on-surface mb-2">
-                {confirmacaoExclusaoPasso === 0 ? 'Excluir Lançamento?' : 'Confirmar Remoção Permanente?'}
-              </h3>
-              <p className="text-sm text-outline leading-relaxed">
-                {confirmacaoExclusaoPasso === 0 
-                  ? <>Você deseja remover o registro de escala de <strong>{escalas.find(e => e.id === showExcluirConfirm)?.name}</strong>?</>
-                  : <><strong>Atenção:</strong> Esta ação excluirá permanentemente este lançamento do histórico.</>
-                }
-              </p>
-            </div>
-            <div className="flex border-t border-outline-variant/10">
-              <button 
-                onClick={() => {
-                  setShowExcluirConfirm(null);
-                  setConfirmacaoExclusaoPasso(0);
-                }}
-                className="flex-1 px-6 py-4 text-sm font-bold text-outline hover:bg-surface-high transition-colors border-r border-outline-variant/10"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={() => handleExcluirEscala(showExcluirConfirm)}
-                className={`flex-1 px-6 py-4 text-sm font-bold transition-colors ${confirmacaoExclusaoPasso === 0 ? 'text-error hover:bg-error/5' : 'bg-error text-surface hover:brightness-110'}`}
-              >
-                {confirmacaoExclusaoPasso === 0 ? 'Remover' : 'Confirmar Exclusão'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }
 
-function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor, isOnline, profId, month, year, vinculo, linha_cuidado, shifts, onDelete }: any) {
+function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor, isOnline, profId, month, year, vinculo, linha_cuidado, shifts, onDelete, onEdit }: any) {
   const navigate = useNavigate();
 
-  const handleViewScale = () => {
+  const handleRowClick = () => {
+    // Clique na linha permite visualização sem senha
     navigate('/lancamento', { 
       state: { 
         profId, 
         month,
         year,
         autoSelect: true,
-        returnUrl: '/escala'
+        returnUrl: '/escala',
+        readOnly: true // Modo visualização
       } 
     });
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit({ profId, month, year });
   };
 
   // Contagem de turnos
@@ -379,10 +390,10 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
   return (
     <div 
       className="group relative flex flex-col md:flex-row md:items-center bg-surface-low p-4 sm:p-5 rounded-2xl border border-outline-variant/5 hover:border-primary/30 hover:bg-surface-high transition-all duration-500 cursor-pointer active:scale-[0.995] gap-4 md:gap-0 shadow-sm hover:shadow-md"
+      onClick={handleRowClick}
     >
       {/* 1. Professional Section (Left) */}
       <div 
-        onClick={handleViewScale}
         className="flex items-center justify-between md:justify-start w-full md:w-[22%] shrink-0"
       >
         <div className="flex items-center gap-4">
@@ -404,7 +415,6 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
       {/* 2. Resumo de Turnos (Center-Left) */}
       {shiftSummary.length > 0 && (
         <div 
-          onClick={handleViewScale}
           className="flex flex-wrap gap-2 w-full md:w-[23%] justify-start md:justify-center border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 md:px-4"
         >
           <div className="flex flex-wrap justify-center gap-2">
@@ -427,7 +437,6 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
 
       {/* 3. Referência Temporal (Center-Right) */}
       <div 
-        onClick={handleViewScale}
         className="flex flex-col items-start md:items-center justify-center w-full md:w-[25%] md:px-6 border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0"
       >
         <span className="text-[9px] text-primary/60 font-black uppercase mb-1.5 tracking-[0.25em] leading-none text-center w-full">Referência Temporal</span>
@@ -440,7 +449,6 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
       {/* 4. Details Section (Right) */}
       <div className="flex items-center justify-between md:justify-center w-full md:w-[22%] border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 shrink-0 md:px-4">
         <div 
-          onClick={handleViewScale}
           className="flex flex-col items-start md:items-center w-full"
         >
           <span className="text-[9px] text-outline font-black uppercase mb-1.5 tracking-[0.2em] w-full text-left md:text-center">Linha / Categoria</span>
@@ -464,10 +472,7 @@ function LogEntry({ id, time, name, role, avatar, monthYear, status, statusColor
       <div className="flex items-center justify-end w-full md:w-[8%] border-t border-outline-variant/5 pt-3 md:border-t-0 md:pt-0 shrink-0">
         <div className="flex gap-1">
           <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewScale();
-            }}
+            onClick={handleEditClick}
             className="p-2 text-outline hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
             title="Editar lançamento"
           >
