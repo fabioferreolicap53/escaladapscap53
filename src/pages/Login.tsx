@@ -23,7 +23,7 @@ export default function Login() {
     const success = login(email, password);
     
     if (success) {
-      navigate('/escala');
+      navigate('/monitoramento');
     } else {
       setError(true);
       setIsLoading(false);
