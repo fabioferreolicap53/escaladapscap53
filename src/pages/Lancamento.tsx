@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Layout } from '../components/Layout';
 import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -309,23 +309,15 @@ export default function Lancamento() {
     });
   };
 
-  const handleMouseDown = (index: number) => {
+  const handleMouseDown = (index: number, e: React.PointerEvent) => {
     if (isReadOnly) return;
+    // Release pointer capture to allow pointer enter events to fire on other cells during drag
+    e.currentTarget.releasePointerCapture(e.pointerId);
     setIsPainting(true);
-    if (activeShiftType && professionalShifts[index] !== 'weekend') {
-      setProfessionalShifts(prev => {
-        const ns = [...prev];
-        ns[index] = { 
-          type: activeShiftType.type, 
-          color: activeShiftType.color,
-          label: activeShiftType.label 
-        };
-        return ns;
-      });
-    }
+    applyShift(index);
   };
 
-  const handleMouseEnter = (index: number) => {
+  const handleMouseEnter = (index: number, e: React.PointerEvent) => {
     if (isPainting && activeShiftType && professionalShifts[index] !== 'weekend' && !isReadOnly) {
       setProfessionalShifts(prev => {
         const newShifts = [...prev];
@@ -683,10 +675,8 @@ export default function Lancamento() {
                         {day && (
                           <ShiftCell 
                             shift={cell.shift}
-                            onMouseDown={() => handleMouseDown(cell.index)}
-                            onMouseEnter={() => handleMouseEnter(cell.index)}
-                            onClick={() => applyShift(cell.index)}
-                            onTouchStart={() => applyShift(cell.index)}
+                            onMouseDown={(e) => handleMouseDown(cell.index, e)}
+                            onMouseEnter={(e) => handleMouseEnter(cell.index, e)}
                             isReadOnly={isReadOnly}
                           />
                         )}
@@ -725,7 +715,7 @@ export default function Lancamento() {
   );
 }
 
-function ShiftCell({ shift, onMouseDown, onMouseEnter, onClick, onTouchStart, isReadOnly }: { shift: any, onMouseDown?: () => void, onMouseEnter?: () => void, onClick?: () => void, onTouchStart?: () => void, isReadOnly: boolean }) {
+function ShiftCell({ shift, onMouseDown, onMouseEnter, isReadOnly }: { shift: any, onMouseDown?: (e: React.PointerEvent) => void, onMouseEnter?: (e: React.PointerEvent) => void, isReadOnly: boolean }) {
   if (shift === 'weekend') {
     return (
       <div className="flex-grow bg-surface-high/30 border-r border-outline-variant/5 last:border-r-0" />
@@ -747,10 +737,8 @@ function ShiftCell({ shift, onMouseDown, onMouseEnter, onClick, onTouchStart, is
 
   return (
     <div 
-      onMouseDown={onMouseDown}
-      onMouseEnter={onMouseEnter}
-      onClick={onClick}
-      onTouchStart={onTouchStart}
+      onPointerDown={onMouseDown as any}
+      onPointerEnter={onMouseEnter as any}
       className={`flex-grow border-r border-outline-variant/10 last:border-r-0 transition-all duration-200 relative group/cell min-h-[100px] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'} ${shift ? getColorClasses(shift.color) : isReadOnly ? '' : 'hover:bg-primary/5'}`}
     >
       {shift && (
