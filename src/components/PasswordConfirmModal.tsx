@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, X, ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react';
+import { Lock, X, ShieldCheck, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 interface PasswordConfirmModalProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ export function PasswordConfirmModal({
   error = false
 }: PasswordConfirmModalProps) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!isOpen) return null;
 
@@ -28,6 +29,12 @@ export function PasswordConfirmModal({
     e.preventDefault();
     if (!password) return;
     onConfirm(password);
+  };
+
+  const handleClose = () => {
+    setPassword('');
+    setShowPassword(false);
+    onClose();
   };
 
   return (
@@ -46,7 +53,7 @@ export function PasswordConfirmModal({
           </div>
           <button 
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 text-outline hover:text-error hover:bg-error/10 rounded-xl transition-all"
           >
             <X size={20} />
@@ -63,18 +70,25 @@ export function PasswordConfirmModal({
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors" size={18} />
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"} 
                 autoFocus
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Digite a senha de login..."
-                className={`w-full bg-surface-low border rounded-2xl pl-12 pr-4 py-4 text-sm focus:ring-4 transition-all text-on-surface outline-none placeholder:text-outline/40 ${
+                className={`w-full bg-surface-low border rounded-2xl pl-12 pr-12 py-4 text-sm focus:ring-4 transition-all text-on-surface outline-none placeholder:text-outline/40 ${
                   error 
                     ? 'border-error focus:ring-error/10 focus:border-error' 
                     : 'border-outline-variant/20 focus:ring-primary/10 focus:border-primary'
                 }`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
             {error && (
               <div className="flex items-center gap-2 mt-2 text-error text-[10px] font-bold uppercase tracking-wider ml-1 animate-in slide-in-from-top-1">
@@ -87,7 +101,7 @@ export function PasswordConfirmModal({
           <div className="flex gap-3 pt-2">
             <button 
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 py-4 text-sm font-bold text-outline hover:bg-surface-high rounded-2xl transition-all border border-outline-variant/10"
             >
               Cancelar

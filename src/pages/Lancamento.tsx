@@ -289,16 +289,16 @@ export default function Lancamento() {
   }, [selectedProfessional, mesAtual, anoAtual, escalas]);
 
   const applyShift = (index: number) => {
-    if (!activeShiftType || professionalShifts[index] === 'weekend' || isReadOnly) return;
+    if (professionalShifts[index] === 'weekend' || isReadOnly) return;
     
     setProfessionalShifts(prev => {
       const newShifts = [...prev];
       
-      // Se clicar em um dia que já tem exatamente o mesmo turno, ele "apaga" (toggle off)
-      if (newShifts[index] && newShifts[index].type === activeShiftType.type) {
+      // Se já existe um lançamento no dia clicado, ele SEMPRE apaga (toggle off)
+      if (newShifts[index]) {
         newShifts[index] = null;
-      } else {
-        // Senão, ele pinta com o novo turno
+      } else if (activeShiftType) {
+        // Se o dia está vazio e existe um tipo selecionado, ele pinta
         newShifts[index] = { 
           type: activeShiftType.type, 
           color: activeShiftType.color,
@@ -310,9 +310,19 @@ export default function Lancamento() {
   };
 
   const handleMouseDown = (index: number) => {
-    if (!activeShiftType || isReadOnly) return;
+    if (isReadOnly) return;
     setIsPainting(true);
-    applyShift(index);
+    if (activeShiftType && professionalShifts[index] !== 'weekend') {
+      setProfessionalShifts(prev => {
+        const ns = [...prev];
+        ns[index] = { 
+          type: activeShiftType.type, 
+          color: activeShiftType.color,
+          label: activeShiftType.label 
+        };
+        return ns;
+      });
+    }
   };
 
   const handleMouseEnter = (index: number) => {
@@ -675,6 +685,8 @@ export default function Lancamento() {
                             shift={cell.shift}
                             onMouseDown={() => handleMouseDown(cell.index)}
                             onMouseEnter={() => handleMouseEnter(cell.index)}
+                            onClick={() => applyShift(cell.index)}
+                            onTouchStart={() => applyShift(cell.index)}
                             isReadOnly={isReadOnly}
                           />
                         )}
@@ -713,7 +725,7 @@ export default function Lancamento() {
   );
 }
 
-function ShiftCell({ shift, onMouseDown, onMouseEnter, isReadOnly }: { shift: any, onMouseDown?: () => void, onMouseEnter?: () => void, isReadOnly: boolean }) {
+function ShiftCell({ shift, onMouseDown, onMouseEnter, onClick, onTouchStart, isReadOnly }: { shift: any, onMouseDown?: () => void, onMouseEnter?: () => void, onClick?: () => void, onTouchStart?: () => void, isReadOnly: boolean }) {
   if (shift === 'weekend') {
     return (
       <div className="flex-grow bg-surface-high/30 border-r border-outline-variant/5 last:border-r-0" />
@@ -737,10 +749,12 @@ function ShiftCell({ shift, onMouseDown, onMouseEnter, isReadOnly }: { shift: an
     <div 
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
+      onClick={onClick}
+      onTouchStart={onTouchStart}
       className={`flex-grow border-r border-outline-variant/10 last:border-r-0 transition-all duration-200 relative group/cell min-h-[100px] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'} ${shift ? getColorClasses(shift.color) : isReadOnly ? '' : 'hover:bg-primary/5'}`}
     >
       {shift && (
-        <div className="absolute inset-1.5 flex flex-col items-center justify-center text-center p-1 rounded-xl border border-current/20 backdrop-blur-[2px] animate-in fade-in zoom-in-95 duration-300">
+        <div className="absolute inset-1.5 flex flex-col items-center justify-center text-center p-1 rounded-xl border border-current/20 backdrop-blur-[2px] animate-in fade-in zoom-in-95 duration-300 pointer-events-none">
           <span className="text-[10px] font-black leading-tight uppercase tracking-tighter drop-shadow-sm">
             {shift.label}
           </span>
