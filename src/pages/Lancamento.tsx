@@ -129,6 +129,10 @@ export default function Lancamento() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Estados para controle de sensibilidade touch
+  const touchStartPos = useRef<{ x: number, y: number } | null>(null);
+  const touchStartTime = useRef<number>(0);
+
   // Atualiza os dias vazios (finais de semana) ao mudar o mês
   const updateShiftsForMonth = (month: number, year: number) => {
     setProfessionalShifts(generateEmptyShifts(month, year));
@@ -311,10 +315,39 @@ export default function Lancamento() {
 
   const handleMouseDown = (index: number, e: React.PointerEvent) => {
     if (isReadOnly) return;
-    // Release pointer capture to allow pointer enter events to fire on other cells during drag
+    
+    // Se for um evento de toque (pointerType === 'touch'), registramos a posição e o tempo
+    // para diferenciar um toque intencional de um deslize (scroll)
+    if (e.pointerType === 'touch') {
+      touchStartPos.current = { x: e.clientX, y: e.clientY };
+      touchStartTime.current = Date.now();
+      return; // No toque, não aplicamos o shift imediatamente no pointerDown
+    }
+
+    // Comportamento normal para mouse
     e.currentTarget.releasePointerCapture(e.pointerId);
     setIsPainting(true);
     applyShift(index);
+  };
+
+  const handlePointerUp = (index: number, e: React.PointerEvent) => {
+    if (isReadOnly) return;
+    setIsPainting(false);
+
+    // Lógica para finalizar o toque em dispositivos mobile/tablet
+    if (e.pointerType === 'touch' && touchStartPos.current) {
+      const xDiff = Math.abs(e.clientX - touchStartPos.current.x);
+      const yDiff = Math.abs(e.clientY - touchStartPos.current.y);
+      const timeDiff = Date.now() - touchStartTime.current;
+
+      // Se o movimento foi pequeno (menos de 10px) e rápido (menos de 300ms)
+      // consideramos um clique intencional e não um scroll
+      if (xDiff < 10 && yDiff < 10 && timeDiff < 300) {
+        applyShift(index);
+      }
+      
+      touchStartPos.current = null;
+    }
   };
 
   const handleMouseEnter = (index: number, e: React.PointerEvent) => {
@@ -334,6 +367,7 @@ export default function Lancamento() {
 
   const handleMouseUp = () => {
     setIsPainting(false);
+    touchStartPos.current = null;
   };
   
   // Ordenar e filtrar profissionais
@@ -675,8 +709,9 @@ export default function Lancamento() {
                         {day && (
                           <ShiftCell 
                             shift={cell.shift}
-                            onMouseDown={(e) => handleMouseDown(cell.index, e)}
-                            onMouseEnter={(e) => handleMouseEnter(cell.index, e)}
+                            onPointerDown={(e) => handleMouseDown(cell.index, e)}
+                            onPointerUp={(e) => handlePointerUp(cell.index, e)}
+                            onPointerEnter={(e) => handleMouseEnter(cell.index, e)}
                             isReadOnly={isReadOnly}
                           />
                         )}
@@ -715,7 +750,7 @@ export default function Lancamento() {
   );
 }
 
-function ShiftCell({ shift, onMouseDown, onMouseEnter, isReadOnly }: { shift: any, onMouseDown?: (e: React.PointerEvent) => void, onMouseEnter?: (e: React.PointerEvent) => void, isReadOnly: boolean }) {
+function ShiftCell({ shift, onPointerDown, onPointerUp, onPointerEnter, isReadOnly }: { shift: any, onPointerDown?: (e: React.PointerEvent) => void, onPointerUp?: (e: React.PointerEvent) => void, onPointerEnter?: (e: React.PointerEvent) => void, isReadOnly: boolean }) {
   if (shift === 'weekend') {
     return (
       <div className="flex-grow bg-surface-high/30 border-r border-outline-variant/5 last:border-r-0" />
@@ -737,8 +772,9 @@ function ShiftCell({ shift, onMouseDown, onMouseEnter, isReadOnly }: { shift: an
 
   return (
     <div 
-      onPointerDown={onMouseDown as any}
-      onPointerEnter={onMouseEnter as any}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerEnter={onPointerEnter}
       className={`flex-grow border-r border-outline-variant/10 last:border-r-0 transition-all duration-200 relative group/cell min-h-[100px] ${isReadOnly ? 'cursor-default' : 'cursor-pointer'} ${shift ? getColorClasses(shift.color) : isReadOnly ? '' : 'hover:bg-primary/5'}`}
     >
       {shift && (
