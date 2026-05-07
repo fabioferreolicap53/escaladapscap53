@@ -22,9 +22,10 @@ interface LayoutProps {
   children: ReactNode;
   activePath?: string;
   hideFooterOnMobile?: boolean;
+  hideSearch?: boolean;
 }
 
-export function Layout({ children, activePath = '/', hideFooterOnMobile = false }: LayoutProps) {
+export function Layout({ children, activePath = '/', hideFooterOnMobile = false, hideSearch = false }: LayoutProps) {
   const { searchTerm, setSearchTerm } = useSettings();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -98,24 +99,27 @@ export function Layout({ children, activePath = '/', hideFooterOnMobile = false 
             >
               <Menu size={20} />
             </button>
-            <div className="relative w-full group hidden sm:block">
-              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searchTerm ? 'text-primary' : 'text-outline group-focus-within:text-primary'}`} size={16} />
-              <input 
-                type="text" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar profissional, escala..." 
-                className="w-full bg-surface-low border border-outline-variant/10 rounded-full pl-9 pr-9 py-1.5 text-xs focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder:text-outline/50 text-on-surface outline-none"
-              />
-              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-error transition-colors bg-surface-high rounded-full p-0.5"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
+            
+            {!hideSearch && (
+              <div className="relative w-full group hidden sm:block">
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searchTerm ? 'text-primary' : 'text-outline group-focus-within:text-primary'}`} size={16} />
+                <input 
+                  type="text" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar profissional, escala..." 
+                  className="w-full bg-surface-low border border-outline-variant/10 rounded-full pl-9 pr-9 py-1.5 text-xs focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder:text-outline/50 text-on-surface outline-none"
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-error transition-colors bg-surface-high rounded-full p-0.5"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="hidden md:flex items-center">
@@ -124,29 +128,31 @@ export function Layout({ children, activePath = '/', hideFooterOnMobile = false 
         </header>
 
         {/* Mobile Search Bar (Visible only on very small screens) */}
-        <div className="sm:hidden absolute top-12 left-0 w-full px-4 py-2 bg-surface z-20 border-b border-outline-variant/10">
-           <div className="relative w-full group">
-              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searchTerm ? 'text-primary' : 'text-outline'}`} size={14} />
-              <input 
-                type="text" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar..." 
-                className="w-full bg-surface-low border border-outline-variant/10 rounded-lg pl-8 pr-8 py-1.5 text-xs focus:ring-2 focus:ring-primary/30 transition-all text-on-surface outline-none"
-              />
-              {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-error"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-        </div>
+        {!hideSearch && (
+          <div className="sm:hidden absolute top-12 left-0 w-full px-4 py-2 bg-surface z-20 border-b border-outline-variant/10">
+             <div className="relative w-full group">
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searchTerm ? 'text-primary' : 'text-outline'}`} size={14} />
+                <input 
+                  type="text" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar..." 
+                  className="w-full bg-surface-low border border-outline-variant/10 rounded-lg pl-8 pr-8 py-1.5 text-xs focus:ring-2 focus:ring-primary/30 transition-all text-on-surface outline-none"
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-error"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+          </div>
+        )}
 
         {/* Page Content */}
-        <div className="mt-[88px] sm:mt-12 pt-4 sm:pt-0 p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto overflow-x-hidden relative custom-scrollbar">
+        <div className={`${hideSearch ? 'mt-12 sm:mt-12' : 'mt-[88px] sm:mt-12'} pt-4 sm:pt-0 p-4 sm:p-6 lg:p-8 flex-grow overflow-y-auto overflow-x-hidden relative custom-scrollbar`}>
           {children}
         </div>
 

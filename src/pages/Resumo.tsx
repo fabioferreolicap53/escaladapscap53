@@ -132,7 +132,7 @@ export default function Resumo() {
   const isCurrentMonthView = selectedMonth === realCurrentMonth && selectedYear === realCurrentYear;
 
   return (
-    <Layout activePath="/resumo" hideFooterOnMobile={true}>
+    <Layout activePath="/resumo" hideFooterOnMobile={true} hideSearch={true}>
       <div className="p-4 lg:p-8 max-w-7xl mx-auto flex flex-col h-full overflow-y-auto">
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
