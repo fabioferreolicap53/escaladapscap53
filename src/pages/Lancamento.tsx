@@ -732,7 +732,17 @@ export default function Lancamento() {
           ))}
         </div>
 
-        {/* Indicador Flutuante Removido - Agora integrado ao Footer Addon */}
+        {/* Indicador Flutuante - Mobile/Tablet (Sempre Visível) */}
+      {currentProfessional && (
+        <div className="md:hidden fixed bottom-6 right-4 z-50 pointer-events-none animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-surface-high/80 backdrop-blur-md border border-outline-variant/20 rounded-2xl px-5 py-3 shadow-2xl flex items-center gap-3">
+            <CalendarDays size={20} className="text-primary" />
+            <span className="text-sm font-black text-on-surface uppercase tracking-widest">
+              {meses[mesAtual]} / {anoAtual}
+            </span>
+          </div>
+        </div>
+      )}
 
         <div className="flex flex-col bg-surface relative">
           
