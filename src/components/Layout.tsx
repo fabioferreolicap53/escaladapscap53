@@ -23,9 +23,10 @@ interface LayoutProps {
   activePath?: string;
   hideFooterOnMobile?: boolean;
   hideSearch?: boolean;
+  footerAddon?: ReactNode;
 }
 
-export function Layout({ children, activePath = '/', hideFooterOnMobile = false, hideSearch = false }: LayoutProps) {
+export function Layout({ children, activePath = '/', hideFooterOnMobile = false, hideSearch = false, footerAddon }: LayoutProps) {
   const { searchTerm, setSearchTerm } = useSettings();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -157,9 +158,16 @@ export function Layout({ children, activePath = '/', hideFooterOnMobile = false,
         </div>
 
         {/* Footer - Harmonized */}
-        <footer className={`w-full py-4 bg-background/90 backdrop-blur-md flex flex-col justify-center items-center px-4 lg:px-8 border-t border-outline-variant/10 flex-shrink-0 z-30 gap-1 ${hideFooterOnMobile ? 'hidden md:flex' : ''}`}>
-          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">ESCALA DAPS/CAP5.3</span>
-          <span className="text-[8px] font-bold text-outline/40 uppercase tracking-[0.15em]">Desenvolvido por Fabio Ferreira de Oliveira - DAPS/CAP5.3</span>
+        <footer className={`w-full py-4 bg-background/90 backdrop-blur-md flex flex-col justify-center items-center px-4 lg:px-8 border-t border-outline-variant/10 flex-shrink-0 z-30 gap-1 relative ${hideFooterOnMobile ? 'hidden md:flex' : ''}`}>
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">ESCALA DAPS/CAP5.3</span>
+            <span className="text-[8px] font-bold text-outline/40 uppercase tracking-[0.15em]">Desenvolvido por Fabio Ferreira de Oliveira - DAPS/CAP5.3</span>
+          </div>
+          {footerAddon && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              {footerAddon}
+            </div>
+          )}
         </footer>
       </main>
     </div>

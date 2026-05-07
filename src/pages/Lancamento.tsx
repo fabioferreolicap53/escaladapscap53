@@ -421,7 +421,20 @@ export default function Lancamento() {
   const daysOfWeek = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
   return (
-    <Layout activePath="/escala" hideFooterOnMobile={true}>
+    <Layout 
+      activePath="/lancamento" 
+      hideFooterOnMobile={true}
+      footerAddon={
+        currentProfessional && (
+          <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-2 flex items-center gap-2 shadow-sm animate-in fade-in slide-in-from-right-4 duration-500">
+            <CalendarDays size={14} className="text-primary" />
+            <span className="text-[10px] font-black text-on-surface uppercase tracking-widest">
+              {meses[mesAtual]} / {anoAtual}
+            </span>
+          </div>
+        )
+      }
+    >
       <PasswordConfirmModal 
         isOpen={isPassModalOpen}
         onClose={() => setIsPassModalOpen(false)}
@@ -719,17 +732,7 @@ export default function Lancamento() {
           ))}
         </div>
 
-        {/* Indicador Flutuante de Período para Mobile/Tablet (Print-friendly) */}
-        {currentProfessional && (
-          <div className="md:hidden fixed bottom-6 right-4 z-50 pointer-events-none opacity-90">
-            <div className="bg-surface-high/90 backdrop-blur-md border border-outline-variant/30 rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg shadow-background/50">
-              <CalendarDays size={14} className="text-primary" />
-              <span className="text-xs font-black tracking-widest uppercase text-on-surface">
-                {meses[mesAtual].substring(0,3)}/{anoAtual}
-              </span>
-            </div>
-          </div>
-        )}
+        {/* Indicador Flutuante Removido - Agora integrado ao Footer Addon */}
 
         <div className="flex flex-col bg-surface relative">
           
