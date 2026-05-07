@@ -197,9 +197,10 @@ export default function Profissionais() {
     }
 
     // Busca por Texto
-    if (searchTerm && 
-        !prof.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !prof.id.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    const searchTrimmed = (searchTerm || '').trim();
+    if (searchTrimmed && 
+        !prof.name.toLowerCase().includes(searchTrimmed.toLowerCase()) && 
+        !prof.id.toLowerCase().includes(searchTrimmed.toLowerCase())) return false;
     
     return true;
   });

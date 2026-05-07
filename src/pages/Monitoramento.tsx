@@ -58,8 +58,9 @@ export default function Monitoramento() {
       };
     }).filter(prof => {
       // Aplica busca por texto se houver
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
+      const searchTrimmed = (searchTerm || '').trim();
+      if (searchTrimmed) {
+        const searchLower = searchTrimmed.toLowerCase();
         return (
           prof.name.toLowerCase().includes(searchLower) ||
           prof.role.toLowerCase().includes(searchLower) ||

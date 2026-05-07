@@ -130,8 +130,9 @@ export default function Historico() {
     };
   }).filter(log => {
     // Filtros de busca (texto)
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+    const searchTrimmed = (searchTerm || '').trim();
+    if (searchTrimmed) {
+      const searchLower = searchTrimmed.toLowerCase();
       const matchesSearch = 
         log.name.toLowerCase().includes(searchLower) ||
         log.role.toLowerCase().includes(searchLower) ||

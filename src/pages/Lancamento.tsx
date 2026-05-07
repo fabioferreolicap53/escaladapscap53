@@ -382,12 +382,14 @@ export default function Lancamento() {
   const filteredAndSortedProfissionais = useMemo(() => {
     if (!profissionais) return [];
     
+    const searchTrimmed = (searchProf || '').trim().toLowerCase();
+    
     return [...profissionais]
       .filter(p => 
-        (p.name || '').toLowerCase().includes(searchProf.toLowerCase()) ||
-        (p.role || '').toLowerCase().includes(searchProf.toLowerCase()) ||
-        (p.vinculo || '').toLowerCase().includes(searchProf.toLowerCase()) ||
-        (p.linha_cuidado || '').toLowerCase().includes(searchProf.toLowerCase())
+        (p.name || '').toLowerCase().includes(searchTrimmed) ||
+        (p.role || '').toLowerCase().includes(searchTrimmed) ||
+        (p.vinculo || '').toLowerCase().includes(searchTrimmed) ||
+        (p.linha_cuidado || '').toLowerCase().includes(searchTrimmed)
       )
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [profissionais, searchProf]);
