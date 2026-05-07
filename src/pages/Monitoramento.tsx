@@ -159,19 +159,19 @@ export default function Monitoramento() {
           <select 
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="bg-transparent text-sm font-bold text-on-surface outline-none cursor-pointer"
+            className="bg-transparent text-sm font-bold text-on-surface outline-none cursor-pointer focus:bg-surface-high"
           >
             {mesesNomes.map((mes, index) => (
-              <option key={mes} value={index}>{mes}</option>
+              <option key={mes} value={index} className="bg-surface text-on-surface">{mes}</option>
             ))}
           </select>
           <select 
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="bg-transparent text-sm font-bold text-on-surface outline-none cursor-pointer pr-2"
+            className="bg-transparent text-sm font-bold text-on-surface outline-none cursor-pointer pr-2 focus:bg-surface-high"
           >
             {anosDisponiveis.map(ano => (
-              <option key={ano} value={ano}>{ano}</option>
+              <option key={ano} value={ano} className="bg-surface text-on-surface">{ano}</option>
             ))}
           </select>
         </div>

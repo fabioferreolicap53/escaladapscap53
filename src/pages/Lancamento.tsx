@@ -72,6 +72,14 @@ export default function Lancamento() {
   const [mesAtual, setMesAtual] = useState(new Date().getMonth());
   const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
 
+  // Anos disponíveis para seleção
+  const anosDisponiveis = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const base = [currentYear - 1, currentYear, currentYear + 1];
+    const fromEscalas = escalas.map(e => e.year);
+    return Array.from(new Set([...base, ...fromEscalas])).sort((a, b) => b - a);
+  }, [escalas]);
+
   const prevMonth = () => {
     setMesAtual(prev => {
       if (prev === 0) {
@@ -411,7 +419,7 @@ export default function Lancamento() {
   const daysOfWeek = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
   return (
-    <Layout activePath="/escala">
+    <Layout activePath="/escala" hideFooterOnMobile={true}>
       <PasswordConfirmModal 
         isOpen={isPassModalOpen}
         onClose={() => setIsPassModalOpen(false)}
@@ -482,7 +490,7 @@ export default function Lancamento() {
             <div className="relative" ref={dropdownRef}>
               <div 
                 onClick={() => setIsProfSelectOpen(!isProfSelectOpen)}
-                className={`w-full flex items-center gap-3 bg-surface border rounded-xl px-4 py-3 text-sm transition-all duration-300 group cursor-pointer ${
+                className={`w-full flex items-center gap-3 bg-surface border rounded-xl px-4 py-4 text-sm transition-all duration-300 group cursor-pointer ${
                   isProfSelectOpen 
                     ? 'border-primary ring-4 ring-primary/10 shadow-lg' 
                     : 'border-outline-variant/20 hover:border-primary/40 hover:bg-surface-high shadow-sm'
@@ -558,31 +566,79 @@ export default function Lancamento() {
           </div>
           
           {/* Card de Informação (Preenchimento Perfeito) */}
-          <div className="flex-1 flex items-center relative overflow-hidden bg-surface/30 rounded-r-xl">
+          <div className="flex-1 flex flex-col md:flex-row items-center relative overflow-hidden bg-surface/30 rounded-b-xl md:rounded-bl-none md:rounded-r-xl">
             {currentProfessional ? (
-              <div className="flex items-center gap-6 px-8 w-full h-full animate-in fade-in slide-in-from-left-8 duration-500">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 p-6 md:px-8 w-full h-full animate-in fade-in slide-in-from-left-8 duration-500">
                 {/* Background Decorativo Sutil */}
                 <div className="absolute right-0 top-0 h-full w-full bg-gradient-to-l from-primary/5 via-transparent to-transparent pointer-events-none" />
                 
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center font-black text-surface text-2xl shadow-xl shadow-primary/20 ring-4 ring-primary/10 relative z-10">
-                  {currentProfessional.name.substring(0, 2).toUpperCase()}
-                </div>
-                <div className="relative z-10 flex flex-col">
-                  <h4 className="text-xl font-black text-on-surface tracking-tight leading-tight">{currentProfessional.name}</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
-                      {currentProfessional.role}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-secondary-container/10 text-secondary text-[10px] font-black uppercase tracking-widest border border-secondary/10">
-                      {currentProfessional.vinculo}
-                    </span>
-                    {currentProfessional.linha_cuidado && (
-                      <span className="px-2 py-0.5 rounded bg-surface-high text-outline text-[10px] font-black uppercase tracking-widest border border-outline-variant/10">
-                        {currentProfessional.linha_cuidado}
+                <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center font-black text-surface text-2xl shadow-xl shadow-primary/20 ring-4 ring-primary/10 relative z-10 shrink-0">
+                    {currentProfessional.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="relative z-10 flex flex-col">
+                    <h4 className="text-xl font-black text-on-surface tracking-tight leading-tight line-clamp-1">{currentProfessional.name}</h4>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                        {currentProfessional.role}
                       </span>
-                    )}
+                      <span className="px-2 py-0.5 rounded bg-secondary-container/10 text-secondary text-[10px] font-black uppercase tracking-widest border border-secondary/10">
+                        {currentProfessional.vinculo}
+                      </span>
+                      {currentProfessional.linha_cuidado && (
+                        <span className="px-2 py-0.5 rounded bg-surface-high text-outline text-[10px] font-black uppercase tracking-widest border border-outline-variant/10">
+                          {currentProfessional.linha_cuidado}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                
+                {/* Seletor de Período Integrado no Card */}
+                <div className="mt-4 md:mt-0 md:ml-auto flex flex-col justify-center w-full md:w-auto md:min-w-[240px] md:mr-4 relative z-10">
+                  <label className="hidden md:block text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-2 ml-1">Período</label>
+                  <div className="flex items-center gap-2 bg-surface border border-outline-variant/20 rounded-xl px-4 py-3 shadow-sm transition-all hover:border-primary/40 hover:bg-surface-high">
+                    <button onClick={prevMonth} className="p-1 text-outline hover:text-primary transition-all active:scale-90">
+                      <ChevronLeft size={18} />
+                    </button>
+                    <div className="flex-grow flex items-center justify-center gap-2 px-1">
+                      <CalendarDays size={16} className="text-primary/70" />
+                      <div className="flex items-center gap-1.5">
+                        <select 
+                          value={mesAtual}
+                          onChange={(e) => {
+                            const newMonth = Number(e.target.value);
+                            setMesAtual(newMonth);
+                            updateShiftsForMonth(newMonth, anoAtual);
+                          }}
+                          className="bg-transparent text-sm font-bold text-on-surface uppercase tracking-wide outline-none cursor-pointer hover:text-primary transition-colors appearance-none text-center"
+                        >
+                          {meses.map((mes, index) => (
+                            <option key={mes} value={index} className="bg-surface text-on-surface">{mes.toUpperCase()}</option>
+                          ))}
+                        </select>
+                        <span className="text-outline/30 font-bold">/</span>
+                        <select 
+                          value={anoAtual}
+                          onChange={(e) => {
+                            const newYear = Number(e.target.value);
+                            setAnoAtual(newYear);
+                            updateShiftsForMonth(mesAtual, newYear);
+                          }}
+                          className="bg-transparent text-sm font-bold text-on-surface uppercase tracking-wide outline-none cursor-pointer hover:text-primary transition-colors appearance-none text-center"
+                        >
+                          {anosDisponiveis.map(ano => (
+                            <option key={ano} value={ano} className="bg-surface text-on-surface">{ano}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <button onClick={nextMonth} className="p-1 text-outline hover:text-primary transition-all active:scale-90">
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                </div>
+
               </div>
             ) : (
               <div className="flex items-center gap-4 px-8 text-outline/40 italic text-sm">
@@ -602,22 +658,6 @@ export default function Lancamento() {
           <div>
             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary mb-1">Seletor de Lançamento</h3>
             <p className="text-[10px] text-outline font-bold uppercase tracking-widest opacity-60">Escolha um turno para pintar no calendário</p>
-          </div>
-          
-          {/* Seletor de Mês Integrado */}
-          <div className="flex items-center gap-1 bg-surface-high/50 p-1 rounded-xl border border-outline-variant/10 shadow-inner">
-            <button onClick={prevMonth} className="w-10 h-10 flex items-center justify-center text-outline hover:text-primary hover:bg-surface rounded-lg transition-all active:scale-90">
-              <ChevronLeft size={20} />
-            </button>
-            <div className="flex items-center gap-3 px-4 min-w-[160px] justify-center">
-              <CalendarDays size={16} className="text-primary/60" />
-              <span className="text-sm font-black text-on-surface uppercase tracking-wider">
-                {meses[mesAtual]} / {anoAtual}
-              </span>
-            </div>
-            <button onClick={nextMonth} className="w-10 h-10 flex items-center justify-center text-outline hover:text-primary hover:bg-surface rounded-lg transition-all active:scale-90">
-              <ChevronRight size={20} />
-            </button>
           </div>
         </div>
         
@@ -677,8 +717,20 @@ export default function Lancamento() {
           ))}
         </div>
 
-        {/* Calendar Rows - Sharp Definitions */}
-        <div className="flex flex-col bg-surface">
+        {/* Indicador Flutuante de Período para Mobile/Tablet (Print-friendly) */}
+        {currentProfessional && (
+          <div className="md:hidden fixed bottom-6 right-4 z-50 pointer-events-none opacity-90">
+            <div className="bg-surface-high/90 backdrop-blur-md border border-outline-variant/30 rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg shadow-background/50">
+              <CalendarDays size={14} className="text-primary" />
+              <span className="text-xs font-black tracking-widest uppercase text-on-surface">
+                {meses[mesAtual].substring(0,3)}/{anoAtual}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col bg-surface relative">
+          
           {currentProfessional ? (
             weeks.map((week, weekIndex) => (
               <div key={weekIndex} className="grid grid-cols-7 border-b border-outline-variant/10 last:border-b-0 min-h-[120px]">

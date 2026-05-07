@@ -14,15 +14,17 @@ import {
   Menu,
   LogOut,
   UserCircle2,
-  PieChart
+  PieChart,
+  ClipboardList
 } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
   activePath?: string;
+  hideFooterOnMobile?: boolean;
 }
 
-export function Layout({ children, activePath = '/' }: LayoutProps) {
+export function Layout({ children, activePath = '/', hideFooterOnMobile = false }: LayoutProps) {
   const { searchTerm, setSearchTerm } = useSettings();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -59,6 +61,7 @@ export function Layout({ children, activePath = '/' }: LayoutProps) {
         
         <nav className="flex flex-col gap-2 grow">
           <NavItem icon={<PieChart size={20} />} label="Monitoramento" active={activePath === '/monitoramento'} path="/monitoramento" onClick={() => setIsMobileMenuOpen(false)} />
+          <NavItem icon={<ClipboardList size={20} />} label="Resumo" active={activePath === '/resumo'} path="/resumo" onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={<CalendarDays size={20} />} label="Escala" active={activePath === '/escala'} path="/escala" onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={<Users size={20} />} label="Profissionais" active={activePath === '/profissionais'} path="/profissionais" onClick={() => setIsMobileMenuOpen(false)} />
           <NavItem icon={<Settings size={20} />} label="Configurações" active={activePath === '/configuracoes'} path="/configuracoes" onClick={() => setIsMobileMenuOpen(false)} />
@@ -148,7 +151,7 @@ export function Layout({ children, activePath = '/' }: LayoutProps) {
         </div>
 
         {/* Footer - Harmonized */}
-        <footer className="w-full py-4 bg-background/90 backdrop-blur-md flex flex-col justify-center items-center px-4 lg:px-8 border-t border-outline-variant/10 flex-shrink-0 z-30 gap-1">
+        <footer className={`w-full py-4 bg-background/90 backdrop-blur-md flex flex-col justify-center items-center px-4 lg:px-8 border-t border-outline-variant/10 flex-shrink-0 z-30 gap-1 ${hideFooterOnMobile ? 'hidden md:flex' : ''}`}>
           <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">ESCALA DAPS/CAP5.3</span>
           <span className="text-[8px] font-bold text-outline/40 uppercase tracking-[0.15em]">Desenvolvido por Fabio Ferreira de Oliveira - DAPS/CAP5.3</span>
         </footer>

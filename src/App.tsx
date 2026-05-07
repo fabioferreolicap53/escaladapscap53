@@ -7,12 +7,13 @@ import { ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Monitoramento from './pages/Monitoramento';
 import Profissionais from './pages/Profissionais';
 import Historico from './pages/Historico';
+import Resumo from './pages/Resumo';
 import Lancamento from './pages/Lancamento';
 import Configuracoes from './pages/Configuracoes';
 import Login from './pages/Login';
-import Monitoramento from './pages/Monitoramento';
 
 // Componente para proteger rotas
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -47,6 +48,11 @@ export default function App() {
             <Route path="/escala" element={
               <ProtectedRoute>
                 <Historico />
+              </ProtectedRoute>
+            } />
+            <Route path="/resumo" element={
+              <ProtectedRoute>
+                <Resumo />
               </ProtectedRoute>
             } />
             <Route path="/lancamento" element={
