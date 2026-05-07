@@ -34,7 +34,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             
-            <Route path="/" element={<Navigate to="/monitoramento" replace />} />
+            <Route path="/" element={<Navigate to="/resumo" replace />} />
             <Route path="/monitoramento" element={
               <ProtectedRoute>
                 <Monitoramento />

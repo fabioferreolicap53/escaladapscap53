@@ -24,7 +24,7 @@ export default function Login() {
     const success = login(email, password);
     
     if (success) {
-      navigate('/monitoramento');
+      navigate('/resumo');
     } else {
       setError(true);
       setIsLoading(false);

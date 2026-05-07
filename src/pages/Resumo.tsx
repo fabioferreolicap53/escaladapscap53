@@ -195,9 +195,14 @@ export default function Resumo() {
                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 shadow-lg shadow-primary/5 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
                   <h2 className="text-xl font-black text-primary tracking-tight mb-1">HOJE</h2>
-                  <p className="text-xs font-bold uppercase tracking-widest text-primary/70 mb-6">
-                    {today.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                  </p>
+                  <div className="flex items-center gap-2 mb-6">
+                    <p className="text-xs font-bold uppercase tracking-widest text-primary/70">
+                      {today.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </p>
+                    <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
+                      {today.toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase()}
+                    </span>
+                  </div>
 
                   {data.today.length === 0 ? (
                     <div className="text-center py-8">
