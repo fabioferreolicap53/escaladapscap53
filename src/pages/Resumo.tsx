@@ -216,10 +216,10 @@ export default function Resumo() {
                             <div className="w-8 h-8 bg-surface-high rounded-lg flex items-center justify-center text-outline shrink-0">
                               <User size={16} />
                             </div>
-                            <div className="flex flex-col overflow-hidden">
-                              <span className="text-sm font-bold truncate text-on-surface">{item.prof.name}</span>
-                              <span className="text-[10px] uppercase font-bold text-outline truncate">{item.prof.role}</span>
-                            </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm font-bold text-on-surface leading-tight break-words">{item.prof.name}</span>
+                            <span className="text-[10px] uppercase font-bold text-outline mt-0.5">{item.prof.role}</span>
+                          </div>
                           </div>
                           <div className="flex items-center gap-1 bg-surface-high px-2 py-1 rounded-md shrink-0">
                             {getShiftIcon(item.shift.label)}
@@ -265,9 +265,14 @@ export default function Resumo() {
                         <div className="flex flex-col gap-2">
                           {workers.map((w: any, idx: number) => (
                             <div key={idx} className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-bold text-on-surface truncate" title={w.prof.name}>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-xs font-bold text-on-surface leading-tight break-words">
                                 {w.prof.name}
                               </span>
+                              <span className="text-[9px] font-bold uppercase text-outline mt-0.5">
+                                {w.prof.role}
+                              </span>
+                            </div>
                               <div className="flex items-center gap-1 shrink-0 opacity-80" title={w.shift.label}>
                                 {getShiftIcon(w.shift.label)}
                                 <span className="text-[9px] font-black uppercase text-outline">{w.shift.label.replace('TRAB ', '').substring(0, 3)}</span>

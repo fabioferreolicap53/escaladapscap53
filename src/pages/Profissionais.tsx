@@ -532,15 +532,35 @@ export default function Profissionais() {
 
                     {isLinhaDropdownOpen && (
                       <div className="absolute bottom-full left-0 w-full mb-2 bg-surface border border-outline-variant/20 rounded-xl shadow-2xl z-[70] overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
-                        <div className="p-2 border-b border-outline-variant/10">
-                          <input
-                            type="text"
-                            placeholder="Buscar linha..."
-                            value={searchLinha}
-                            onChange={(e) => setSearchLinha(e.target.value)}
-                            className="w-full bg-surface-low border border-outline-variant/10 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all"
-                            autoFocus
-                          />
+                        <div className="p-2 border-b border-outline-variant/10 flex items-center gap-2">
+                          <div className="relative flex-grow">
+                            <input
+                              type="text"
+                              placeholder="Buscar linha..."
+                              value={searchLinha}
+                              onChange={(e) => setSearchLinha(e.target.value)}
+                              className="w-full bg-surface-low border border-outline-variant/10 rounded-lg px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition-all pr-8"
+                              autoFocus
+                            />
+                            {searchLinha && (
+                              <button 
+                                onClick={() => setSearchLinha('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-error p-0.5"
+                              >
+                                <X size={12} />
+                              </button>
+                            )}
+                          </div>
+                          {novoProfissional.linha_cuidado && (
+                            <button
+                              type="button"
+                              onClick={() => setNovoProfissional({...novoProfissional, linha_cuidado: ''})}
+                              className="px-2 py-2 bg-error/10 text-error rounded-lg hover:bg-error/20 transition-all flex items-center justify-center shrink-0"
+                              title="Limpar todas as seleções"
+                            >
+                              <X size={14} strokeWidth={3} />
+                            </button>
+                          )}
                         </div>
                         <div className="max-h-[180px] overflow-y-auto custom-scrollbar p-2 space-y-1">
                           {filteredLinhasCuidado.length > 0 ? (
