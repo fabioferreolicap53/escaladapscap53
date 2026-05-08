@@ -136,6 +136,7 @@ export default function Lancamento() {
   const [isPainting, setIsPainting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showShiftWarning, setShowShiftWarning] = useState(false);
 
   // Estados para controle de sensibilidade touch
   const touchStartPos = useRef<{ x: number, y: number } | null>(null);
@@ -303,6 +304,12 @@ export default function Lancamento() {
   const applyShift = (index: number) => {
     if (professionalShifts[index] === 'weekend' || isReadOnly) return;
     
+    if (!activeShiftType && !professionalShifts[index]) {
+      setShowShiftWarning(true);
+      setTimeout(() => setShowShiftWarning(false), 3000);
+      return;
+    }
+
     setProfessionalShifts(prev => {
       const newShifts = [...prev];
       
@@ -810,6 +817,17 @@ export default function Lancamento() {
             <button onClick={() => setShowSuccessAlert(null)} className="text-outline hover:text-on-surface p-1">
               <X size={16} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {showShiftWarning && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-amber-500/10 border border-amber-500/20 backdrop-blur-md rounded-full px-6 py-3 flex items-center gap-3 shadow-2xl">
+            <AlertTriangle size={18} className="text-amber-500 animate-pulse" />
+            <span className="text-sm font-black text-amber-500 uppercase tracking-widest">
+              Selecione primeiro um seletor de lançamento
+            </span>
           </div>
         </div>
       )}
