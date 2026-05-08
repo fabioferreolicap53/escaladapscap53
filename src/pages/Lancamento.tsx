@@ -753,6 +753,17 @@ export default function Lancamento() {
 
         <div className="flex flex-col bg-surface relative">
           
+          {showShiftWarning && (
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-none">
+              <div className="bg-amber-500/10 border border-amber-500/20 backdrop-blur-md rounded-full px-6 py-3 flex items-center gap-3 shadow-2xl whitespace-nowrap">
+                <AlertTriangle size={18} className="text-amber-500 animate-pulse" />
+                <span className="text-sm font-black text-amber-500 uppercase tracking-widest">
+                  Selecione primeiro um seletor de lançamento
+                </span>
+              </div>
+            </div>
+          )}
+
           {currentProfessional ? (
             weeks.map((week, weekIndex) => (
               <div key={weekIndex} className="grid grid-cols-7 border-b border-outline-variant/10 last:border-b-0 min-h-[120px]">
@@ -817,17 +828,6 @@ export default function Lancamento() {
             <button onClick={() => setShowSuccessAlert(null)} className="text-outline hover:text-on-surface p-1">
               <X size={16} />
             </button>
-          </div>
-        </div>
-      )}
-
-      {showShiftWarning && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="bg-amber-500/10 border border-amber-500/20 backdrop-blur-md rounded-full px-6 py-3 flex items-center gap-3 shadow-2xl">
-            <AlertTriangle size={18} className="text-amber-500 animate-pulse" />
-            <span className="text-sm font-black text-amber-500 uppercase tracking-widest">
-              Selecione primeiro um seletor de lançamento
-            </span>
           </div>
         </div>
       )}
