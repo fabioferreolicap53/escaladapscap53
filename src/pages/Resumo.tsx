@@ -133,7 +133,7 @@ export default function Resumo() {
     } else if (selectedYear > realCurrentYear || (selectedYear === realCurrentYear && selectedMonth > realCurrentMonth)) {
       futureDays = allOtherDays;
     } else {
-      pastDays = allOtherDays.filter(d => d.day < currentDay);
+      pastDays = allOtherDays.filter(d => d.day < currentDay).sort((a, b) => b.day - a.day);
       futureDays = allOtherDays.filter(d => d.day > currentDay);
     }
 
