@@ -114,7 +114,7 @@ export default function Resumo() {
     todayWorkers.sort((a, b) => a.prof.name.localeCompare(b.prof.name));
 
     // Convert other days map to array
-    const otherDays = Object.keys(otherDaysMap)
+    const allOtherDays = Object.keys(otherDaysMap)
       .map(Number)
       .map(day => {
         const workers = otherDaysMap[day].sort((a, b) => a.prof.name.localeCompare(b.prof.name));
@@ -125,11 +125,72 @@ export default function Resumo() {
       .filter(d => d.workers.length > 0) // Only days with workers
       .sort((a, b) => a.day - b.day);
 
-    return { today: todayWorkers, otherDays };
+    let pastDays: any[] = [];
+    let futureDays: any[] = [];
+
+    if (selectedYear < realCurrentYear || (selectedYear === realCurrentYear && selectedMonth < realCurrentMonth)) {
+      pastDays = allOtherDays;
+    } else if (selectedYear > realCurrentYear || (selectedYear === realCurrentYear && selectedMonth > realCurrentMonth)) {
+      futureDays = allOtherDays;
+    } else {
+      pastDays = allOtherDays.filter(d => d.day < currentDay);
+      futureDays = allOtherDays.filter(d => d.day > currentDay);
+    }
+
+    return { today: todayWorkers, pastDays, futureDays };
   }, [escalas, profissionais, selectedMonth, selectedYear, currentDay, daysInMonth, realCurrentMonth, realCurrentYear]);
 
   const isLoading = loadingEscalas || loadingProfissionais;
   const isCurrentMonthView = selectedMonth === realCurrentMonth && selectedYear === realCurrentYear;
+
+  const renderDayCards = (days: any[], emptyMessage: string) => {
+    if (days.length === 0) {
+      return (
+        <div className="text-center py-12 border border-dashed border-outline-variant/20 rounded-xl">
+          <p className="text-sm font-bold text-outline uppercase">{emptyMessage}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-4">
+        {days.map(({ day, weekDay, workers }) => (
+          <div key={day} className="border border-outline-variant/10 rounded-xl p-4 bg-surface-low flex flex-col gap-3 shadow-sm transition-all hover:border-primary/20">
+            <div className="flex items-center gap-2 border-b border-outline-variant/10 pb-2">
+              <div className="bg-surface-high text-on-surface font-black text-sm w-7 h-7 rounded-lg flex items-center justify-center">
+                {day}
+              </div>
+              <span className="text-[10px] font-black text-outline uppercase tracking-widest bg-surface-high px-1.5 py-0.5 rounded">
+                {weekDay}
+              </span>
+              <div className="grow" />
+              <span className="text-xs font-bold uppercase tracking-widest text-outline">
+                {workers.length} prof{workers.length > 1 ? 's' : ''}
+              </span>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              {workers.map((w: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between gap-2">
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-xs font-bold text-on-surface leading-tight break-words">
+                    {w.prof.name}
+                  </span>
+                  <span className="text-[9px] font-bold uppercase text-outline mt-0.5">
+                    {w.prof.role}
+                  </span>
+                </div>
+                  <div className="flex items-center gap-1 shrink-0 opacity-80" title={w.shift.label}>
+                    {getShiftIcon(w.shift.label)}
+                    <span className="text-[9px] font-black uppercase text-outline">{w.shift.label.replace('TRAB ', '').substring(0, 3)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Layout activePath="/resumo" hideFooterOnMobile={true} hideSearch={true}>
@@ -187,108 +248,85 @@ export default function Resumo() {
             <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
-            {/* Hoje */}
-            {isCurrentMonthView && (
-              <div className="lg:col-span-1 flex flex-col gap-4">
-                <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 shadow-lg shadow-primary/5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-                  <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-xl font-black text-primary tracking-tight">HOJE</h2>
-                  <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                    {data.today.length} PROF{data.today.length !== 1 ? 'S' : ''}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mb-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-primary/70">
-                      {today.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                    </p>
-                    <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
-                      {today.toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase()}
-                    </span>
-                  </div>
-
-                  {data.today.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-sm font-bold text-primary/60 uppercase">Nenhum profissional escalado</p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3 relative z-10">
-                      {data.today.map((item, idx) => (
-                        <div key={idx} className="bg-surface border border-outline-variant/20 rounded-xl p-3 flex items-center justify-between shadow-sm">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-8 h-8 bg-surface-high rounded-lg flex items-center justify-center text-outline shrink-0">
-                              <User size={16} />
-                            </div>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-sm font-bold text-on-surface leading-tight break-words">{item.prof.name}</span>
-                            <span className="text-[10px] uppercase font-bold text-outline mt-0.5">{item.prof.role}</span>
-                          </div>
-                          </div>
-                          <div className="flex items-center gap-1 bg-surface-high px-2 py-1 rounded-md shrink-0">
-                            {getShiftIcon(item.shift.label)}
-                            <span className="text-[10px] font-black uppercase">{item.shift.label.replace('TRAB ', '')}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Outros Dias */}
-            <div className={`${isCurrentMonthView ? 'lg:col-span-2' : 'lg:col-span-3'} flex flex-col gap-4`}>
+            {/* Dias Passados (Esquerda) */}
+            <div className="flex flex-col gap-4 lg:col-span-1 order-2 lg:order-1">
               <div className="bg-surface border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
-                <h2 className="text-lg font-black text-on-surface tracking-tight mb-1">OUTROS DIAS</h2>
+                <h2 className="text-lg font-black text-on-surface tracking-tight mb-1">DIAS ANTERIORES</h2>
                 <p className="text-xs font-bold uppercase tracking-widest text-outline mb-6">
                   {mesesNomes[selectedMonth]} / {selectedYear}
                 </p>
+                {renderDayCards(data.pastDays, 'Sem registros anteriores')}
+              </div>
+            </div>
 
-                {data.otherDays.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-outline-variant/20 rounded-xl">
-                    <p className="text-sm font-bold text-outline uppercase">Sem registros para outros dias</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {data.otherDays.map(({ day, weekDay, workers }) => (
-                      <div key={day} className="border border-outline-variant/10 rounded-xl p-4 bg-surface-low flex flex-col gap-3">
-                        <div className="flex items-center gap-2 border-b border-outline-variant/10 pb-2">
-                          <div className="bg-primary text-surface font-black text-sm w-7 h-7 rounded-lg flex items-center justify-center">
-                            {day}
-                          </div>
-                          <span className="text-[10px] font-black text-primary/50 uppercase tracking-widest bg-primary/5 px-1.5 py-0.5 rounded">
-                            {weekDay}
-                          </span>
-                          <div className="grow" />
-                          <span className="text-xs font-bold uppercase tracking-widest text-outline">
-                            {workers.length} prof{workers.length > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        
-                        <div className="flex flex-col gap-2">
-                          {workers.map((w: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between gap-2">
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-xs font-bold text-on-surface leading-tight break-words">
-                                {w.prof.name}
-                              </span>
-                              <span className="text-[9px] font-bold uppercase text-outline mt-0.5">
-                                {w.prof.role}
-                              </span>
-                            </div>
-                              <div className="flex items-center gap-1 shrink-0 opacity-80" title={w.shift.label}>
-                                {getShiftIcon(w.shift.label)}
-                                <span className="text-[9px] font-black uppercase text-outline">{w.shift.label.replace('TRAB ', '').substring(0, 3)}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+            {/* Hoje (Centro) */}
+            <div className="flex flex-col gap-4 lg:col-span-1 order-1 lg:order-2">
+              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 shadow-lg shadow-primary/5 relative overflow-hidden ring-2 ring-primary/30">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-xl font-black text-primary tracking-tight">HOJE</h2>
+                  {isCurrentMonthView && (
+                    <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                      {data.today.length} PROF{data.today.length !== 1 ? 'S' : ''}
+                    </span>
+                  )}
+                </div>
+                
+                {isCurrentMonthView ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-6">
+                      <p className="text-xs font-bold uppercase tracking-widest text-primary/70">
+                        {today.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </p>
+                      <span className="text-[10px] font-black text-primary/40 uppercase tracking-widest bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
+                        {today.toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase()}
+                      </span>
+                    </div>
+
+                    {data.today.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm font-bold text-primary/60 uppercase">HOJE NÃO TEM NINGUÉM ESCALADO</p>
                       </div>
-                    ))}
+                    ) : (
+                      <div className="flex flex-col gap-3 relative z-10">
+                        {data.today.map((item, idx) => (
+                          <div key={idx} className="bg-surface border border-outline-variant/20 rounded-xl p-3 flex items-center justify-between shadow-sm">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <div className="w-8 h-8 bg-surface-high rounded-lg flex items-center justify-center text-outline shrink-0">
+                                <User size={16} />
+                              </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="text-sm font-bold text-on-surface leading-tight break-words">{item.prof.name}</span>
+                              <span className="text-[10px] uppercase font-bold text-outline mt-0.5">{item.prof.role}</span>
+                            </div>
+                            </div>
+                            <div className="flex items-center gap-1 bg-surface-high px-2 py-1 rounded-md shrink-0">
+                              {getShiftIcon(item.shift.label)}
+                              <span className="text-[10px] font-black uppercase">{item.shift.label.replace('TRAB ', '')}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 relative z-10">
+                    <p className="text-sm font-bold text-primary/60 uppercase">Visualizando outro mês</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Próximos Dias (Direita) */}
+            <div className="flex flex-col gap-4 lg:col-span-1 order-3 lg:order-3">
+              <div className="bg-surface border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
+                <h2 className="text-lg font-black text-on-surface tracking-tight mb-1">PRÓXIMOS DIAS</h2>
+                <p className="text-xs font-bold uppercase tracking-widest text-outline mb-6">
+                  {mesesNomes[selectedMonth]} / {selectedYear}
+                </p>
+                {renderDayCards(data.futureDays, 'Sem próximos registros')}
               </div>
             </div>
 
