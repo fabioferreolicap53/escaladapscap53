@@ -177,9 +177,19 @@ export default function Resumo() {
                   <span className="text-xs font-bold text-on-surface leading-tight break-words">
                     {w.prof.name}
                   </span>
-                  <span className="text-[9px] font-bold uppercase text-outline mt-0.5">
-                    {w.prof.role}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                    <span className="text-[9px] font-bold uppercase text-outline">
+                      {w.prof.role}
+                    </span>
+                    {w.prof.linha_cuidado && (
+                      <>
+                        <span className="text-[8px] text-outline/20">•</span>
+                        <span className="text-[8px] font-black uppercase text-primary/50 tracking-tighter">
+                          {w.prof.linha_cuidado}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
                   <div className="flex items-center gap-1 shrink-0 opacity-80" title={w.shift.label}>
                     {getShiftIcon(w.shift.label)}
@@ -302,7 +312,17 @@ export default function Resumo() {
                             </div>
                           <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-bold text-on-surface leading-tight break-words">{item.prof.name}</span>
-                            <span className="text-[10px] uppercase font-bold text-outline mt-0.5">{item.prof.role}</span>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] uppercase font-bold text-outline">{item.prof.role}</span>
+                              {item.prof.linha_cuidado && (
+                                <>
+                                  <span className="text-[8px] text-outline/30">•</span>
+                                  <span className="text-[9px] uppercase font-black text-primary/60 tracking-tighter bg-primary/5 px-1 rounded-sm border border-primary/10">
+                                    {item.prof.linha_cuidado}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
                           </div>
                           <div className="flex items-center gap-1 bg-surface-high px-2 py-1 rounded-md shrink-0">
