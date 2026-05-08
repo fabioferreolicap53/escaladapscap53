@@ -254,7 +254,7 @@ export default function Resumo() {
             
             {/* Dias Passados (Esquerda) */}
             {(isCurrentMonthView || isPastMonthView) && (
-              <div className={`flex flex-col gap-4 ${isCurrentMonthView ? 'lg:col-span-1 order-2 lg:order-1' : ''}`}>
+              <div className={`flex flex-col gap-4 ${isCurrentMonthView ? 'lg:col-span-1 order-3 lg:order-1' : ''}`}>
                 <div className="bg-surface border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
                   <h2 className="text-lg font-black text-on-surface tracking-tight mb-1">
                     {isPastMonthView ? 'DIAS DO MÊS' : 'DIAS ANTERIORES'}
@@ -319,7 +319,7 @@ export default function Resumo() {
 
             {/* Próximos Dias (Direita) */}
             {(isCurrentMonthView || isFutureMonthView) && (
-              <div className={`flex flex-col gap-4 ${isCurrentMonthView ? 'lg:col-span-1 order-3 lg:order-3' : ''}`}>
+              <div className={`flex flex-col gap-4 ${isCurrentMonthView ? 'lg:col-span-1 order-2 lg:order-3' : ''}`}>
                 <div className="bg-surface border border-outline-variant/20 rounded-2xl p-6 shadow-sm">
                   <h2 className="text-lg font-black text-on-surface tracking-tight mb-1">
                     {isFutureMonthView ? 'DIAS DO MÊS' : 'PRÓXIMOS DIAS'}
